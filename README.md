@@ -74,7 +74,7 @@ Recommended starting point:
 ├── ice_sim.html          # Advanced kinetics simulator
 ├── ice_sim_lite.html     # Lite Brownian particle simulator
 ├── README.md             # Project documentation
-├── LICENSE               # MIT License
+├── LICENSE.md            # MIT License
 └── screenshots/          # Screenshots for this README
 ```
 
@@ -144,7 +144,7 @@ The advanced model includes:
 
 - **Play/Pause**: stops or resumes the simulation.
 - **Reset**: restarts the fields and particles with the current slider settings.
-- **Time Scale**: speeds up or slows down simulated time using fixed physics substeps.
+- **Playback Rate**: speeds up or slows down simulated time using fixed physics substeps.
 
 ### Thermodynamics
 
@@ -482,7 +482,7 @@ The lite model defines particle properties in its species-property function. Thi
 
 ### Change numerical timing
 
-Both widgets use fixed-step timing. The relevant constants are near the bottom of each script. Increasing maximum steps per frame allows higher time scales but can increase CPU load. Increasing the fixed timestep may improve speed but can reduce numerical smoothness.
+Both widgets use fixed-step timing. The relevant constants are near the bottom of each script. Increasing maximum steps per frame allows higher playback rates but can increase CPU load. Increasing the fixed timestep may improve speed but can reduce numerical smoothness.
 
 ---
 
