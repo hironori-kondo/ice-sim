@@ -3,25 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Directional Solidification & Clear Ice Simulator</title>
+  <title>Clear Ice Simulator V2 - Advanced Kinetics</title>
   <style>
     :root {
-      --bg: #08111f;
-      --panel: #101b2d;
-      --panel-2: #15243b;
-      --text: #eaf5ff;
-      --muted: #a9bed0;
-      --accent: #7dd3fc;
-      --accent-2: #38bdf8;
+      --bg: #06101f;
+      --panel: #0f1b2e;
+      --text: #edf7ff;
+      --muted: #a9bdd0;
       --line: rgba(255, 255, 255, 0.12);
-      --danger: #fca5a5;
-      --good: #a7f3d0;
-      --warning: #fde68a;
+      --blue: #38bdf8;
+      --blue-2: #7dd3fc;
+      --orange: #f59e0b;
+      --red: #fb7185;
+      --green: #86efac;
+      --violet: #c4b5fd;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     html,
     body {
@@ -29,37 +27,36 @@
       height: 100%;
       margin: 0;
       overflow: hidden;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
-      background: radial-gradient(circle at top left, #10233e 0%, var(--bg) 38%, #050912 100%);
-    }
-
-    body {
-      display: flex;
+      background:
+        radial-gradient(circle at 70% 10%, rgba(56, 189, 248, 0.16), transparent 34%),
+        radial-gradient(circle at 15% 90%, rgba(196, 181, 253, 0.10), transparent 30%),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     .app {
       width: 100%;
       height: 100%;
       display: flex;
-      min-width: 900px;
+      min-width: 980px;
     }
 
     .controls {
-      width: 340px;
-      min-width: 320px;
+      width: 380px;
+      min-width: 350px;
       height: 100%;
       padding: 22px;
-      background: linear-gradient(180deg, rgba(16, 27, 45, 0.96), rgba(10, 18, 32, 0.96));
-      border-right: 1px solid var(--line);
       overflow-y: auto;
+      background: linear-gradient(180deg, rgba(15, 27, 46, 0.98), rgba(7, 13, 24, 0.98));
+      border-right: 1px solid var(--line);
       box-shadow: 18px 0 50px rgba(0, 0, 0, 0.25);
     }
 
-    .controls h1 {
+    h1 {
       margin: 0 0 8px;
-      font-size: 21px;
-      line-height: 1.2;
+      font-size: 22px;
+      line-height: 1.15;
       letter-spacing: -0.03em;
     }
 
@@ -71,7 +68,7 @@
     }
 
     .section {
-      margin: 18px 0;
+      margin: 16px 0;
       padding: 15px;
       border: 1px solid var(--line);
       border-radius: 18px;
@@ -79,17 +76,15 @@
     }
 
     .section h2 {
-      margin: 0 0 12px;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      color: #d8ecff;
+      margin: 0 0 13px;
+      color: #dff2ff;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0.09em;
       text-transform: uppercase;
     }
 
-    .control-row {
-      margin: 12px 0 15px;
-    }
+    .control-row { margin: 13px 0 15px; }
 
     .label-line {
       display: flex;
@@ -102,18 +97,18 @@
 
     .label-line span:first-child {
       color: #dbeafe;
-      font-weight: 650;
+      font-weight: 700;
     }
 
     .value {
-      color: var(--accent);
+      color: var(--blue-2);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
 
     input[type="range"] {
       width: 100%;
-      accent-color: var(--accent-2);
+      accent-color: var(--blue);
       cursor: pointer;
     }
 
@@ -121,17 +116,17 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-top: 12px;
+      margin-top: 10px;
     }
 
     button {
-      border: 1px solid rgba(125, 211, 252, 0.26);
+      border: 1px solid rgba(125, 211, 252, 0.28);
       border-radius: 13px;
       padding: 11px 12px;
       color: var(--text);
-      background: linear-gradient(180deg, rgba(56, 189, 248, 0.23), rgba(14, 116, 144, 0.18));
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.22), rgba(14, 116, 144, 0.16));
       font-size: 13px;
-      font-weight: 750;
+      font-weight: 800;
       cursor: pointer;
       transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
     }
@@ -139,16 +134,14 @@
     button:hover {
       transform: translateY(-1px);
       border-color: rgba(125, 211, 252, 0.62);
-      background: linear-gradient(180deg, rgba(56, 189, 248, 0.32), rgba(14, 116, 144, 0.26));
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.32), rgba(14, 116, 144, 0.24));
     }
 
-    button:active {
-      transform: translateY(0);
-    }
+    button:active { transform: translateY(0); }
 
     .reset {
-      border-color: rgba(252, 165, 165, 0.28);
-      background: linear-gradient(180deg, rgba(252, 165, 165, 0.16), rgba(127, 29, 29, 0.16));
+      border-color: rgba(251, 113, 133, 0.30);
+      background: linear-gradient(180deg, rgba(251, 113, 133, 0.16), rgba(127, 29, 29, 0.16));
     }
 
     .metrics {
@@ -161,7 +154,7 @@
       padding: 10px;
       border: 1px solid var(--line);
       border-radius: 14px;
-      background: rgba(3, 7, 18, 0.32);
+      background: rgba(2, 6, 23, 0.32);
     }
 
     .metric .name {
@@ -173,9 +166,16 @@
     .metric .number {
       margin-top: 5px;
       color: #f8fbff;
-      font-size: 18px;
-      font-weight: 850;
+      font-size: 17px;
+      font-weight: 900;
       font-variant-numeric: tabular-nums;
+    }
+
+    .note {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
     }
 
     .legend {
@@ -193,149 +193,162 @@
     }
 
     .swatch {
-      width: 13px;
-      height: 13px;
+      width: 14px;
+      height: 14px;
       border-radius: 999px;
-      flex: 0 0 auto;
       border: 1px solid rgba(255, 255, 255, 0.35);
+      flex: 0 0 auto;
     }
 
+    .swatch.stable { background: rgba(125, 211, 252, 0.35); }
+    .swatch.unstable { background: rgba(245, 245, 245, 0.9); }
     .swatch.gas { background: #f8fafc; }
     .swatch.mineral { background: #f59e0b; border-radius: 3px; }
-    .swatch.ice { background: rgba(200, 235, 255, 0.68); }
-    .swatch.cloud { background: rgba(245, 245, 245, 0.88); }
+    .swatch.under { background: rgba(251, 113, 133, 0.70); }
 
     .stage {
       position: relative;
       flex: 1;
       min-width: 0;
       height: 100%;
-      display: flex;
-      align-items: stretch;
-      justify-content: stretch;
     }
 
     canvas {
       display: block;
       width: 100%;
       height: 100%;
-      background: transparent;
     }
 
     .overlay {
       position: absolute;
-      top: 18px;
-      right: 18px;
-      max-width: 300px;
+      left: 18px;
+      bottom: 18px;
+      max-width: 450px;
       padding: 12px 14px;
       border: 1px solid var(--line);
       border-radius: 18px;
-      background: rgba(5, 10, 19, 0.58);
-      backdrop-filter: blur(10px);
       color: var(--muted);
+      background: rgba(2, 6, 23, 0.58);
+      backdrop-filter: blur(10px);
       font-size: 12px;
       line-height: 1.45;
       pointer-events: none;
     }
 
-    .overlay strong {
-      color: #e0f2fe;
-    }
+    .overlay strong { color: #e0f2fe; }
 
-    .note {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.45;
-    }
-
-    @media (max-width: 950px) {
+    @media (max-width: 980px) {
       html,
-      body {
-        overflow: auto;
-      }
-
+      body { overflow: auto; }
       .app {
         min-width: 0;
         min-height: 100%;
         height: auto;
         flex-direction: column;
       }
-
       .controls {
         width: 100%;
         height: auto;
         border-right: none;
         border-bottom: 1px solid var(--line);
       }
-
       .stage {
-        height: 70vh;
-        min-height: 520px;
+        height: 76vh;
+        min-height: 560px;
       }
+      .overlay { display: none; }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <aside class="controls" aria-label="Simulation controls">
-      <h1>Directional Solidification</h1>
+    <aside class="controls" aria-label="Advanced kinetics controls">
+      <h1>Clear Ice Simulator V2</h1>
       <p class="subtitle">
-        A self-contained MVC clear-ice simulator. The model tracks a 1D thermal field, an advancing 0&nbsp;°C freezing front, Brownian solute motion, interface rejection, and trapped-particle cloudiness.
+        Advanced kinetics companion widget: finite-difference temperature and two-species concentration fields, partitioning, freezing-point depression, constitutional undercooling, and rough-front trapping.
       </p>
 
       <section class="section">
-        <h2>Global Simulation</h2>
+        <h2>Global</h2>
         <div class="button-row">
           <button id="playPauseBtn" type="button">Pause</button>
           <button id="resetBtn" class="reset" type="button">Reset</button>
         </div>
-
         <div class="control-row">
           <div class="label-line">
-            <span>Playback Rate</span>
-            <span id="speedValue" class="value">10x</span>
+            <span>Time Scale</span>
+            <span id="timeScaleValue" class="value">60x</span>
           </div>
-          <input id="speedSlider" type="range" min="1" max="100" step="1" value="10" />
+          <input id="timeScaleSlider" type="range" min="1" max="1000" step="1" value="60" />
         </div>
+        <p class="note">Time scale uses fixed physics substeps. It changes playback speed, not the integration timestep.</p>
       </section>
 
       <section class="section">
-        <h2>Thermal Extremes</h2>
+        <h2>Thermodynamics</h2>
         <div class="control-row">
           <div class="label-line">
-            <span>Bottom Plate Temp</span>
+            <span>Bottom Cooling Temp</span>
             <span id="bottomTempValue" class="value">-18 °C</span>
           </div>
-          <input id="bottomTempSlider" type="range" min="-40" max="0" step="1" value="-18" />
+          <input id="bottomTempSlider" type="range" min="-30" max="-1" step="1" value="-18" />
         </div>
-
         <div class="control-row">
           <div class="label-line">
             <span>Ambient Air Temp</span>
-            <span id="ambientTempValue" class="value">12 °C</span>
+            <span id="ambientTempValue" class="value">8 °C</span>
           </div>
-          <input id="ambientTempSlider" type="range" min="0" max="25" step="1" value="12" />
+          <input id="ambientTempSlider" type="range" min="0" max="25" step="1" value="8" />
         </div>
       </section>
 
       <section class="section">
-        <h2>Initial Solute Concentrations</h2>
+        <h2>Kinetics</h2>
         <div class="control-row">
           <div class="label-line">
-            <span>Dissolved Gases</span>
-            <span id="gasValue" class="value">240 particles</span>
+            <span>Water Circulation / Mixing</span>
+            <span id="mixingValue" class="value">35%</span>
           </div>
-          <input id="gasSlider" type="range" min="0" max="900" step="10" value="240" />
+          <input id="mixingSlider" type="range" min="0" max="100" step="1" value="35" />
         </div>
+        <p class="note">Higher mixing increases liquid diffusion and homogenizes the solute boundary layer, which tends to suppress constitutional undercooling.</p>
+      </section>
 
+      <section class="section">
+        <h2>Gas Solute</h2>
         <div class="control-row">
           <div class="label-line">
-            <span>Dissolved Minerals</span>
-            <span id="mineralValue" class="value">140 particles</span>
+            <span>Initial Gas Concentration</span>
+            <span id="gasValue" class="value">1.2%</span>
           </div>
-          <input id="mineralSlider" type="range" min="0" max="700" step="10" value="140" />
+          <input id="gasSlider" type="range" min="0" max="5" step="0.1" value="1.2" />
         </div>
-        <p class="note">Changing concentration sliders soft-resets particle arrays while keeping the current temperature and playback settings.</p>
+        <div class="control-row">
+          <div class="label-line">
+            <span>Gas Partition Coefficient k</span>
+            <span id="gasKValue" class="value">0.010</span>
+          </div>
+          <input id="gasKSlider" type="range" min="0.001" max="0.300" step="0.001" value="0.010" />
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Mineral Solute</h2>
+        <div class="control-row">
+          <div class="label-line">
+            <span>Initial Mineral Concentration</span>
+            <span id="mineralValue" class="value">0.8%</span>
+          </div>
+          <input id="mineralSlider" type="range" min="0" max="5" step="0.1" value="0.8" />
+        </div>
+        <div class="control-row">
+          <div class="label-line">
+            <span>Mineral Partition Coefficient k</span>
+            <span id="mineralKValue" class="value">0.100</span>
+          </div>
+          <input id="mineralKSlider" type="range" min="0.001" max="0.500" step="0.001" value="0.100" />
+        </div>
+        <p class="note">Lower k means stronger rejection into the liquid. Concentration or k changes reset the fields so the new physical parameters start from a clean state.</p>
       </section>
 
       <section class="section">
@@ -346,20 +359,28 @@
             <div id="frontMetric" class="number">0%</div>
           </div>
           <div class="metric">
-            <div class="name">Clarity</div>
+            <div class="name">Morphology</div>
+            <div id="morphMetric" class="number">Stable</div>
+          </div>
+          <div class="metric">
+            <div class="name">Max undercooling</div>
+            <div id="underMetric" class="number">0.00 °C</div>
+          </div>
+          <div class="metric">
+            <div class="name">Boundary C total</div>
+            <div id="boundaryMetric" class="number">0.0%</div>
+          </div>
+          <div class="metric">
+            <div class="name">Gas in solid</div>
+            <div id="gasTrapMetric" class="number">0</div>
+          </div>
+          <div class="metric">
+            <div class="name">Mineral in solid</div>
+            <div id="mineralTrapMetric" class="number">0</div>
+          </div>
+          <div class="metric">
+            <div class="name">Avg clarity</div>
             <div id="clarityMetric" class="number">100%</div>
-          </div>
-          <div class="metric">
-            <div class="name">Trapped</div>
-            <div id="trappedMetric" class="number">0</div>
-          </div>
-          <div class="metric">
-            <div class="name">Liquid</div>
-            <div id="liquidMetric" class="number">0</div>
-          </div>
-          <div class="metric">
-            <div class="name">Target isotherm</div>
-            <div id="targetMetric" class="number">0%</div>
           </div>
           <div class="metric">
             <div class="name">Sim time</div>
@@ -371,10 +392,11 @@
       <section class="section">
         <h2>Legend</h2>
         <div class="legend">
-          <div class="legend-item"><span class="swatch ice"></span>Solid ice, nearly transparent when clean</div>
-          <div class="legend-item"><span class="swatch gas"></span>Dissolved gases / bubbles, low partition coefficient</div>
-          <div class="legend-item"><span class="swatch mineral"></span>Mineral impurities, moderate partition coefficient</div>
-          <div class="legend-item"><span class="swatch cloud"></span>Cloudiness from trapped solute density</div>
+          <div class="legend-item"><span class="swatch stable"></span>Stable planar growth: clear, transparent ice</div>
+          <div class="legend-item"><span class="swatch unstable"></span>Unstable cellular/dendritic growth: cloudy ice</div>
+          <div class="legend-item"><span class="swatch under"></span>Constitutionally undercooled liquid zone</div>
+          <div class="legend-item"><span class="swatch gas"></span>Gas particles / bubble nuclei</div>
+          <div class="legend-item"><span class="swatch mineral"></span>Mineral particles / deposits</div>
         </div>
       </section>
     </aside>
@@ -382,7 +404,7 @@
     <main class="stage" aria-label="Simulation canvas area">
       <canvas id="simCanvas"></canvas>
       <div class="overlay">
-        <strong>Physics note:</strong> y=0 is the cooled bottom plate and y=H is the top water surface. Playback rate runs more fixed-size physics steps; freezing velocity still depends on the thermal variables.
+        <strong>Model:</strong> Gas and mineral fields diffuse independently, reject solute according to their own partition coefficients, and jointly depress the local freezing point. Particle motion is biased toward the concentration boundary layer so the visual particles track the grid spike near the interface.
       </div>
     </main>
   </div>
@@ -390,250 +412,526 @@
   <script>
     "use strict";
 
-    /*****************************************************************************
-     * MODEL: Physics Engine
-     * Owns simulation state only. No DOM or Canvas calls are allowed here.
-     *****************************************************************************/
     class PhysicsEngine {
       constructor(options = {}) {
-        this.width = options.width || 420;
-        this.height = options.height || 620;
+        this.nodeCount = options.nodeCount || 160;
+        this.dy = 1 / (this.nodeCount - 1);
 
-        this.T_freeze = 0;
         this.T_cool = options.T_cool ?? -18;
-        this.T_ambient = options.T_ambient ?? 12;
-
+        this.T_ambient = options.T_ambient ?? 8;
+        this.mixing = options.mixing ?? 0.35;
+        this.gasC0 = options.gasC0 ?? 0.012;
+        this.mineralC0 = options.mineralC0 ?? 0.008;
+        this.gasK = options.gasK ?? 0.010;
+        this.mineralK = options.mineralK ?? 0.100;
         this.isPaused = false;
-        this.initialGasCount = options.initialGasCount ?? 240;
-        this.initialMineralCount = options.initialMineralCount ?? 140;
+
+        this.T_grid = new Float64Array(this.nodeCount);
+        this.C_gas = new Float64Array(this.nodeCount);
+        this.C_mineral = new Float64Array(this.nodeCount);
+        this.C_solid_gas = new Float64Array(this.nodeCount);
+        this.C_solid_mineral = new Float64Array(this.nodeCount);
+        this.State_grid = new Uint8Array(this.nodeCount);
+        this.cloud_grid = new Float64Array(this.nodeCount);
+        this.undercooled_grid = new Uint8Array(this.nodeCount);
 
         this.particles = [];
-        this.frontY = 0;
-        this.lastFrontSpeed = 0;
-        this.elapsed = 0;
-
-        this.rejectionBand = 30;
-        this.localRadius = 28;
-        this.solubilityThreshold = 0.0026;
-
+        this.solidInclusions = [];
+        this.interfaceIndex = 0;
+        this.advanceCredit = 0;
+        this.time = 0;
+        this.isUnstable = false;
+        this.instabilityScore = 0;
+        this.bulkTotalC = this.gasC0 + this.mineralC0;
         this.randomNormalSpare = null;
+
         this.reset();
       }
 
+      speciesParams(type) {
+        if (type === "mineral") {
+          return {
+            name: "Minerals",
+            k: this.mineralK,
+            m: 24,
+            D: 0.0000045,
+            particleD: 0.000055,
+            particleSize: 2.35,
+            particleDrift: 0.010,
+            trapCloud: 0.022
+          };
+        }
+        return {
+          name: "Gases",
+          k: this.gasK,
+          m: 42,
+          D: 0.0000075,
+          particleD: 0.000090,
+          particleSize: 2.8,
+          particleDrift: 0.014,
+          trapCloud: 0.030
+        };
+      }
+
       reset() {
-        this.particles.length = 0;
-        this.frontY = 0;
-        this.lastFrontSpeed = 0;
-        this.elapsed = 0;
-        this.spawnParticles("gas", this.initialGasCount);
-        this.spawnParticles("mineral", this.initialMineralCount);
+        this.interfaceIndex = 0;
+        this.advanceCredit = 0;
+        this.time = 0;
+        this.isUnstable = false;
+        this.instabilityScore = 0;
+        this.bulkTotalC = this.gasC0 + this.mineralC0;
+
+        for (let i = 0; i < this.nodeCount; i++) {
+          this.T_grid[i] = this.T_ambient;
+          this.C_gas[i] = this.gasC0;
+          this.C_mineral[i] = this.mineralC0;
+          this.C_solid_gas[i] = 0;
+          this.C_solid_mineral[i] = 0;
+          this.State_grid[i] = 0;
+          this.cloud_grid[i] = 0;
+          this.undercooled_grid[i] = 0;
+        }
+
+        this.State_grid[0] = 1;
+        this.T_grid[0] = this.T_cool;
+        this.C_solid_gas[0] = this.gasK * this.gasC0;
+        this.C_solid_mineral[0] = this.mineralK * this.mineralC0;
+        this.C_gas[0] = this.C_solid_gas[0];
+        this.C_mineral[0] = this.C_solid_mineral[0];
+        this.cloud_grid[0] = 0;
+
+        this.spawnParticles();
       }
 
-      softResetParticles() {
+      spawnParticles() {
         this.particles.length = 0;
-        this.spawnParticles("gas", this.initialGasCount);
-        this.spawnParticles("mineral", this.initialMineralCount);
+        this.solidInclusions.length = 0;
+        this.spawnParticlesForSpecies("gas", this.gasC0);
+        this.spawnParticlesForSpecies("mineral", this.mineralC0);
       }
 
-      spawnParticles(type, count) {
-        const props = this.speciesProps(type);
-        const topPad = 14;
-        const bottomPad = 8;
-
+      spawnParticlesForSpecies(type, concentration) {
+        if (concentration <= 0.0001) return;
+        const params = this.speciesParams(type);
+        const count = Math.max(18, Math.min(760, Math.round(16000 * concentration)));
         for (let i = 0; i < count; i++) {
+          const nearInterfaceBias = Math.random() < 0.34;
+          const y = nearInterfaceBias
+            ? this.frontY() + 0.002 + Math.random() * 0.045
+            : this.frontY() + 0.012 + Math.random() * Math.max(0.02, 0.965 - this.frontY());
           this.particles.push({
-            x: Math.random() * this.width,
-            y: bottomPad + Math.random() * (this.height - topPad - bottomPad),
+            x: Math.random(),
+            y: this.clamp(y, this.frontY() + 0.003, 1),
             type,
-            isTrapped: false,
-            lockedX: null,
-            lockedY: null,
-            radius: props.radius * (0.72 + Math.random() * 0.56),
-            jitterSeed: Math.random() * Math.PI * 2
+            trapped: false,
+            radius: params.particleSize * (0.72 + Math.random() * 0.55),
+            phase: Math.random() * Math.PI * 2
           });
         }
       }
 
-      speciesProps(type) {
-        if (type === "gas") {
-          return {
-            D_liquid: 62,
-            D_solid: 0,
-            k: 0.035,
-            radius: 2.4,
-            pushDistance: 7.5
-          };
-        }
-
-        return {
-          D_liquid: 21,
-          D_solid: 0,
-          k: 0.22,
-          radius: 2.15,
-          pushDistance: 5.2
-        };
+      frontY() {
+        return this.interfaceIndex * this.dy;
       }
 
-      temperatureAt(y) {
-        const normalizedY = this.clamp(y / this.height, 0, 1);
-        return this.T_cool + normalizedY * (this.T_ambient - this.T_cool);
+      totalCAt(i) {
+        return Math.max(0, this.C_gas[i]) + Math.max(0, this.C_mineral[i]);
       }
 
-      targetFrontY() {
-        if (this.T_cool >= this.T_freeze) return 0;
-        if (this.T_ambient <= this.T_freeze) return this.height;
+      freezingPoint(gasC, mineralC) {
+        return -this.speciesParams("gas").m * Math.max(0, gasC)
+               -this.speciesParams("mineral").m * Math.max(0, mineralC);
+      }
 
-        const denominator = this.T_ambient - this.T_cool;
-        if (Math.abs(denominator) < 1e-9) return 0;
-
-        const y = this.height * ((this.T_freeze - this.T_cool) / denominator);
-        return this.clamp(y, 0, this.height);
+      freezingPointAtIndex(i) {
+        return this.freezingPoint(this.C_gas[i], this.C_mineral[i]);
       }
 
       update(dt) {
         if (this.isPaused || dt <= 0) return;
+        this.time += dt;
+        this.updateTemperature(dt);
+        this.updateConcentration(dt);
+        this.evaluateConstitutionalUndercooling();
+        this.advanceInterface(dt);
+        this.updateParticles(dt);
+      }
 
-        dt = Math.min(dt, 0.1);
-        this.elapsed += dt;
+      updateTemperature(dt) {
+        const n = this.nodeCount;
+        const old = this.T_grid;
+        const next = new Float64Array(n);
+        const coeff = dt / (this.dy * this.dy);
+        const iceThickness = this.frontY();
+        const bottomH = 0.50 / (1 + 9.0 * iceThickness);
+        const topH = 0.090;
 
-        const previousFrontY = this.frontY;
-        this.advanceFreezingFront(dt);
-        this.lastFrontSpeed = (this.frontY - previousFrontY) / Math.max(dt, 1e-9);
+        next[0] = old[0] + bottomH * (this.T_cool - old[0]) * dt;
+        next[n - 1] = old[n - 1] + topH * (this.T_ambient - old[n - 1]) * dt;
 
-        for (const particle of this.particles) {
-          if (particle.isTrapped) continue;
+        for (let i = 1; i < n - 1; i++) {
+          const isSolid = this.State_grid[i] === 1;
+          const alpha = isSolid ? 0.00034 : 0.00015;
+          const laplacian = old[i - 1] - 2 * old[i] + old[i + 1];
+          next[i] = old[i] + alpha * coeff * laplacian;
 
-          if (particle.y <= this.frontY) {
-            this.handleInterfaceEncounter(particle);
-          } else {
-            this.diffuseLiquidParticle(particle, dt);
-
-            if (particle.y <= this.frontY) {
-              this.handleInterfaceEncounter(particle);
-            }
+          if (isSolid && i === this.interfaceIndex && i > 0) {
+            // Mild Stefan-like interface condition: the active front is nudged
+            // toward its local liquidus, but older solid is allowed to cool by
+            // conduction. This avoids an artificial flat temperature shelf in
+            // the ice while preserving a physically meaningful phase boundary.
+            const liquidus = this.freezingPoint(this.C_solid_gas[i], this.C_solid_mineral[i]);
+            next[i] = next[i] * 0.88 + liquidus * 0.12;
           }
         }
+
+        this.T_grid = next;
       }
 
-      advanceFreezingFront(dt) {
-        const target = this.targetFrontY();
-        const delta = target - this.frontY;
-        if (Math.abs(delta) < 0.001) return;
-
-        const coolingStrength = this.clamp((this.T_freeze - this.T_cool) / 40, 0, 1);
-        const gradientStrength = this.clamp((this.T_ambient - this.T_cool) / 65, 0.08, 1.25);
-        const baseRate = this.height / 260;
-        const maxRate = baseRate * (0.35 + 1.8 * coolingStrength) * gradientStrength;
-
-        const step = Math.sign(delta) * Math.min(Math.abs(delta), maxRate * dt);
-        this.frontY = this.clamp(this.frontY + step, 0, this.height);
+      updateConcentration(dt) {
+        this.updateSpeciesConcentration(dt, "gas");
+        this.updateSpeciesConcentration(dt, "mineral");
+        this.updateBulkConcentrationMetric();
       }
 
-      diffuseLiquidParticle(particle, dt) {
-        const props = this.speciesProps(particle.type);
-        const sigma = Math.sqrt(2 * props.D_liquid * dt);
+      updateSpeciesConcentration(dt, type) {
+        const n = this.nodeCount;
+        const params = this.speciesParams(type);
+        const field = type === "gas" ? this.C_gas : this.C_mineral;
+        const solid = type === "gas" ? this.C_solid_gas : this.C_solid_mineral;
+        const old = field;
+        const next = new Float64Array(old);
+        const mixBoost = 1 + 32 * this.mixing * this.mixing;
+        const D_eff = params.D * mixBoost;
+        const coeff = D_eff * dt / (this.dy * this.dy);
+        const start = this.interfaceIndex + 1;
 
-        particle.x += sigma * this.randomNormal();
-        particle.y += sigma * this.randomNormal();
-
-        const distanceAboveFront = particle.y - this.frontY;
-        if (distanceAboveFront > 0 && distanceAboveFront < this.rejectionBand && this.lastFrontSpeed > 0) {
-          const interfaceInfluence = 1 - distanceAboveFront / this.rejectionBand;
-          particle.y += this.lastFrontSpeed * dt * interfaceInfluence * 1.15;
+        for (let i = start; i < n; i++) {
+          const left = i - 1 <= this.interfaceIndex ? old[i] : old[i - 1];
+          const right = i === n - 1 ? old[i] : old[i + 1];
+          next[i] = Math.max(0, old[i] + coeff * (left - 2 * old[i] + right));
         }
 
-        this.reflectWithinDomain(particle);
+        if (start < n) {
+          let total = 0;
+          let count = 0;
+          for (let i = start; i < n; i++) {
+            total += next[i];
+            count++;
+          }
+          const avg = count > 0 ? total / count : 0;
+          const homogenize = this.clamp(this.mixing * dt * 0.11, 0, 0.18);
+          for (let i = start; i < n; i++) {
+            next[i] = next[i] * (1 - homogenize) + avg * homogenize;
+          }
+        }
+
+        for (let i = 0; i <= this.interfaceIndex; i++) {
+          next[i] = solid[i];
+        }
+
+        if (type === "gas") this.C_gas = next;
+        else this.C_mineral = next;
       }
 
-      handleInterfaceEncounter(particle) {
-        const props = this.speciesProps(particle.type);
-        const localConcentration = this.localParticleConcentration(particle.x, this.frontY);
-        const saturation = this.clamp(
-          (localConcentration - this.solubilityThreshold) / this.solubilityThreshold,
-          0,
-          1
-        );
+      updateBulkConcentrationMetric() {
+        const start = this.interfaceIndex + 1;
+        let total = 0;
+        let count = 0;
+        for (let i = start; i < this.nodeCount; i++) {
+          total += this.totalCAt(i);
+          count++;
+        }
+        this.bulkTotalC = count > 0 ? total / count : this.gasC0 + this.mineralC0;
+      }
 
-        const overtakenDepth = this.clamp((this.frontY - particle.y) / 12, 0, 1);
-        const gasBubbleBonus = particle.type === "gas" ? 0.16 * saturation : 0.04 * saturation;
-        const trapProbability = this.clamp(props.k + 0.68 * saturation + 0.18 * overtakenDepth + gasBubbleBonus, 0.02, 0.98);
+      evaluateConstitutionalUndercooling() {
+        const n = this.nodeCount;
+        const start = this.interfaceIndex + 1;
+        const end = Math.min(n - 1, start + 26);
+        let maxUndercooling = 0;
+        const boundaryC = start < n ? this.totalCAt(start) : 0;
+        const enrichment = boundaryC / Math.max(this.bulkTotalC, 1e-6);
+        const hasRealBoundaryLayer = this.interfaceIndex > 5 && enrichment > 1.18;
 
-        if (Math.random() < trapProbability) {
-          particle.isTrapped = true;
-          particle.lockedX = this.clamp(particle.x, 0, this.width);
-          particle.lockedY = this.clamp(Math.min(particle.y, this.frontY - 0.25), 0, this.height);
-          particle.x = particle.lockedX;
-          particle.y = particle.lockedY;
+        this.undercooled_grid.fill(0);
+        for (let i = start; i <= end; i++) {
+          const Tf = this.freezingPointAtIndex(i);
+          const undercooling = Tf - this.T_grid[i];
+          if (hasRealBoundaryLayer && undercooling > 0.015) {
+            this.undercooled_grid[i] = 1;
+            maxUndercooling = Math.max(maxUndercooling, undercooling);
+          }
+        }
+
+        this.instabilityScore = maxUndercooling;
+        this.isUnstable = hasRealBoundaryLayer && maxUndercooling > 0.045;
+      }
+
+      advanceInterface(dt) {
+        const n = this.nodeCount;
+        let nextIndex = this.interfaceIndex + 1;
+        if (nextIndex >= n) return;
+
+        const localTf = this.freezingPointAtIndex(nextIndex);
+        if (this.T_grid[nextIndex] >= localTf) {
+          this.advanceCredit = Math.max(0, this.advanceCredit - this.dy * dt * 0.015);
           return;
         }
 
-        particle.y = this.clamp(
-          this.frontY + props.pushDistance + Math.random() * this.rejectionBand * 0.52,
-          0,
-          this.height
-        );
-        particle.x += this.randomNormal() * 2.4;
-        this.reflectWithinDomain(particle);
+        const thickness = this.frontY();
+        const thermalResistance = 1 + 9.5 * thickness;
+        const coolingPotential = Math.max(0.1, localTf - this.T_cool);
+        const undercooling = Math.max(0, localTf - this.T_grid[nextIndex]);
+        const heatFluxProxy = coolingPotential / thermalResistance;
+        const mobility = 0.00052;
+        const growthVelocity = mobility * heatFluxProxy * (1 + 0.30 * undercooling);
+
+        this.advanceCredit += growthVelocity * dt;
+
+        while (this.advanceCredit >= this.dy && nextIndex < n) {
+          const candidateTf = this.freezingPointAtIndex(nextIndex);
+          if (this.T_grid[nextIndex] >= candidateTf) break;
+          this.freezeCell(nextIndex);
+          this.advanceCredit -= this.dy;
+          nextIndex = this.interfaceIndex + 1;
+        }
       }
 
-      localParticleConcentration(x, frontY) {
-        const r = this.localRadius;
-        const yMin = frontY;
-        const yMax = Math.min(this.height, frontY + this.rejectionBand);
-        let count = 0;
+      freezeCell(i) {
+        const gasParams = this.speciesParams("gas");
+        const mineralParams = this.speciesParams("mineral");
+        const CgL = Math.max(0, this.C_gas[i]);
+        const CmL = Math.max(0, this.C_mineral[i]);
+        const CgS = gasParams.k * CgL;
+        const CmS = mineralParams.k * CmL;
+        const gasRejected = Math.max(0, CgL - CgS);
+        const mineralRejected = Math.max(0, CmL - CmS);
+        const unstableAtCapture = this.isUnstable && this.interfaceIndex > 5;
 
-        for (const p of this.particles) {
-          if (p.isTrapped) continue;
-          if (p.y < yMin || p.y > yMax) continue;
-          if (Math.abs(p.x - x) <= r) count++;
+        this.State_grid[i] = 1;
+        this.C_solid_gas[i] = CgS;
+        this.C_solid_mineral[i] = CmS;
+        this.C_gas[i] = CgS;
+        this.C_mineral[i] = CmS;
+        this.interfaceIndex = i;
+
+        if (unstableAtCapture) {
+          const rejectedLoad = gasRejected * 1.35 + mineralRejected;
+          this.cloud_grid[i] = this.clamp(0.20 + 6.5 * rejectedLoad + 0.34 * this.instabilityScore, 0.16, 1.0);
+        } else {
+          this.cloud_grid[i] = 0;
         }
 
-        const area = Math.max(1, (2 * r) * Math.max(1, yMax - yMin));
-        return count / area;
+        this.dumpRejectedSolute(this.C_gas, i, gasRejected);
+        this.dumpRejectedSolute(this.C_mineral, i, mineralRejected);
+        this.generateSolidInclusions(i, CgS, CmS, unstableAtCapture);
+        this.captureParticlesNearFrozenCell(i, unstableAtCapture);
+        this.T_grid[i] = Math.max(this.T_grid[i], this.freezingPoint(CgS, CmS) - 0.18);
       }
 
-      reflectWithinDomain(particle) {
-        if (particle.x < 0) particle.x = -particle.x;
-        if (particle.x > this.width) particle.x = this.width - (particle.x - this.width);
-        if (particle.x < 0) particle.x = 0;
-        if (particle.x > this.width) particle.x = this.width;
-
-        if (particle.y < this.frontY) particle.y = this.frontY + Math.random() * 2.5;
-        if (particle.y > this.height) particle.y = this.height - (particle.y - this.height);
-        if (particle.y < 0) particle.y = 0;
-        if (particle.y > this.height) particle.y = this.height;
+      dumpRejectedSolute(field, frozenIndex, rejected) {
+        const weights = [0.48, 0.25, 0.14, 0.08, 0.035, 0.015];
+        for (let w = 0; w < weights.length; w++) {
+          const j = frozenIndex + 1 + w;
+          if (j < this.nodeCount) field[j] += rejected * weights[w];
+        }
       }
 
-      metrics() {
-        let trapped = 0;
-        let gasTrapped = 0;
-        let mineralTrapped = 0;
+      generateSolidInclusions(i, CgS, CmS, unstableAtCapture) {
+        // C_solid is a continuum field: most of it represents dissolved or
+        // molecularly incorporated solute, not macroscopic trapped particles.
+        // These tiny markers are deliberately exaggerated so the nonzero solid
+        // concentration seen in the graph has a visible counterpart.
+        const yCenter = i * this.dy;
+        const cellSpan = this.dy * 0.82;
+        const gasCount = Math.min(5, Math.floor(CgS * 3200 + Math.random()));
+        const mineralCount = Math.min(5, Math.floor(CmS * 1400 + Math.random()));
+        const instabilityBonus = unstableAtCapture ? 2 : 0;
+
+        for (let g = 0; g < gasCount + instabilityBonus; g++) {
+          this.solidInclusions.push({
+            type: "gas",
+            x: Math.random(),
+            y: this.clamp(yCenter + (Math.random() - 0.5) * cellSpan, 0, 1),
+            radius: 1.0 + Math.random() * 0.9,
+            opacity: unstableAtCapture ? 0.70 : 0.30
+          });
+        }
+
+        for (let m = 0; m < mineralCount + Math.floor(instabilityBonus / 2); m++) {
+          this.solidInclusions.push({
+            type: "mineral",
+            x: Math.random(),
+            y: this.clamp(yCenter + (Math.random() - 0.5) * cellSpan, 0, 1),
+            radius: 1.0 + Math.random() * 0.8,
+            opacity: unstableAtCapture ? 0.78 : 0.38
+          });
+        }
+
+        if (this.solidInclusions.length > 2500) {
+          this.solidInclusions.splice(0, this.solidInclusions.length - 2500);
+        }
+      }
+
+      captureParticlesNearFrozenCell(i, unstableAtCapture) {
+        const front = this.frontY();
+        const captureTop = front + this.dy * (unstableAtCapture ? 1.6 : 0.35);
+        for (const p of this.particles) {
+          if (p.trapped) continue;
+          if (p.y > captureTop) continue;
+
+          const params = this.speciesParams(p.type);
+          const stableIncorporationChance = this.clamp(params.k * 0.16, 0, 0.035);
+          if (unstableAtCapture || Math.random() < stableIncorporationChance) {
+            this.trapParticle(p, front);
+          } else {
+            p.y = front + 0.003 + Math.random() * 0.010;
+          }
+        }
+      }
+
+      updateParticles(dt) {
+        const front = this.frontY();
+        const rejectionBand = 0.052;
+        const sterileLayer = 0.0012;
+        const roughCaptureBand = 0.016 + this.clamp(this.instabilityScore * 0.007, 0, 0.035);
 
         for (const p of this.particles) {
-          if (p.isTrapped) {
-            trapped++;
-            if (p.type === "gas") gasTrapped++;
-            else mineralTrapped++;
+          if (p.trapped) continue;
+          const params = this.speciesParams(p.type);
+          const sigma = Math.sqrt(2 * params.particleD * dt);
+          const field = p.type === "gas" ? this.C_gas : this.C_mineral;
+
+          p.x += sigma * this.randomNormal();
+          p.y += sigma * this.randomNormal();
+          this.applyConcentrationGradientDrift(p, field, dt);
+          this.pullParticleTowardBoundaryLayer(p, field, dt);
+
+          const distanceAhead = p.y - front;
+          if (distanceAhead <= sterileLayer) {
+            if (this.isUnstable) {
+              const trapProbability = this.clamp(0.70 + 0.10 * this.instabilityScore, 0.70, 0.97);
+              if (Math.random() < trapProbability) {
+                this.trapParticle(p, front);
+                continue;
+              }
+            }
+            p.y = front + sterileLayer + Math.random() * 0.004;
+          } else if (distanceAhead < rejectionBand) {
+            if (this.isUnstable) {
+              p.y -= 0.0018 * dt * (1 - distanceAhead / rejectionBand);
+              if (distanceAhead < roughCaptureBand && Math.random() < 0.045 + 0.10 * this.instabilityScore) {
+                this.trapParticle(p, front);
+                continue;
+              }
+            } else {
+              // Planar rejection is gentle: particles are kept in the boundary layer,
+              // not artificially evacuated far from the interface.
+              p.y += params.particleDrift * dt * 0.08 * (1 - distanceAhead / rejectionBand);
+            }
+          }
+
+          this.reflectParticle(p, front, sterileLayer);
+        }
+      }
+
+      applyConcentrationGradientDrift(p, field, dt) {
+        const idx = this.clamp(Math.round(p.y / this.dy), this.interfaceIndex + 1, this.nodeCount - 2);
+        const below = field[Math.max(this.interfaceIndex + 1, idx - 1)];
+        const above = field[Math.min(this.nodeCount - 1, idx + 1)];
+        const scale = Math.max(this.gasC0 + this.mineralC0, this.bulkTotalC, 1e-6);
+        const normalizedGradient = this.clamp((above - below) / scale, -2, 2);
+        p.y += normalizedGradient * dt * 0.010;
+      }
+
+      pullParticleTowardBoundaryLayer(p, field, dt) {
+        const start = this.interfaceIndex + 1;
+        if (start >= this.nodeCount - 1) return;
+
+        const maxLookahead = Math.min(this.nodeCount - 1, start + 24);
+        let peakIndex = start;
+        let peakC = field[start];
+        for (let i = start + 1; i <= maxLookahead; i++) {
+          if (field[i] > peakC) {
+            peakC = field[i];
+            peakIndex = i;
           }
         }
 
-        const total = this.particles.length;
-        const frontFraction = this.frontY / this.height;
-        const targetFraction = this.targetFrontY() / this.height;
-        const solidAreaFraction = Math.max(0.02, frontFraction);
-        const weightedDensity = total === 0 ? 0 : (gasTrapped * 1.35 + mineralTrapped * 1.0) / (Math.max(1, total) * solidAreaFraction);
-        const clarity = this.clamp(1 / (1 + 1.75 * weightedDensity), 0, 1);
+        const idx = this.clamp(Math.round(p.y / this.dy), start, this.nodeCount - 1);
+        const localC = field[idx];
+        const bulkScale = Math.max(this.bulkTotalC, this.gasC0 + this.mineralC0, 1e-6);
+        const enrichment = peakC / bulkScale;
+        if (enrichment < 1.08) return;
+
+        const targetY = peakIndex * this.dy + (Math.random() - 0.5) * this.dy * 0.75;
+        const need = this.clamp((peakC - localC) / bulkScale, 0, 2.5);
+        const strength = this.clamp(0.012 * enrichment * need, 0, 0.060);
+        p.y += (targetY - p.y) * strength * dt;
+      }
+
+      trapParticle(p, front) {
+        p.trapped = true;
+        p.y = this.clamp(Math.min(p.y, front - 0.0015 * Math.random()), 0, 1);
+        p.x = this.clamp(p.x, 0, 1);
+        const idx = this.clamp(Math.round(p.y / this.dy), 0, this.nodeCount - 1);
+        this.cloud_grid[idx] = this.clamp(this.cloud_grid[idx] + this.speciesParams(p.type).trapCloud, 0, 1);
+      }
+
+      reflectParticle(p, front, sterileLayer) {
+        if (p.x < 0) p.x = -p.x;
+        if (p.x > 1) p.x = 1 - (p.x - 1);
+        p.x = this.clamp(p.x, 0, 1);
+
+        if (p.y < front + sterileLayer) p.y = front + sterileLayer + Math.random() * 0.004;
+        if (p.y > 1) p.y = 1 - (p.y - 1);
+        p.y = this.clamp(p.y, front + sterileLayer, 1);
+      }
+
+      metrics() {
+        const next = Math.min(this.nodeCount - 1, this.interfaceIndex + 1);
+        let gasTrapped = 0;
+        let mineralTrapped = 0;
+        let gasTotal = 0;
+        let mineralTotal = 0;
+        let cloudSum = 0;
+        let solidCells = 0;
+        let gasSolidMarkers = 0;
+        let mineralSolidMarkers = 0;
+
+        for (const p of this.particles) {
+          if (p.type === "gas") {
+            gasTotal++;
+            if (p.trapped) gasTrapped++;
+          } else {
+            mineralTotal++;
+            if (p.trapped) mineralTrapped++;
+          }
+        }
+        for (const marker of this.solidInclusions) {
+          if (marker.type === "gas") gasSolidMarkers++;
+          else mineralSolidMarkers++;
+        }
+        for (let i = 0; i <= this.interfaceIndex; i++) {
+          cloudSum += this.cloud_grid[i];
+          solidCells++;
+        }
 
         return {
-          trapped,
+          frontFraction: this.frontY(),
+          morphology: this.isUnstable ? "Unstable" : "Stable",
+          maxUndercooling: this.instabilityScore,
+          boundaryC: this.totalCAt(next) || 0,
           gasTrapped,
+          gasTotal,
+          gasSolidMarkers,
           mineralTrapped,
-          liquid: total - trapped,
-          total,
-          frontFraction,
-          targetFraction,
-          clarity,
-          elapsed: this.elapsed
+          mineralTotal,
+          mineralSolidMarkers,
+          clarity: 1 - this.clamp(cloudSum / Math.max(1, solidCells), 0, 1),
+          elapsed: this.time,
+          localTf: this.freezingPointAtIndex(next)
         };
       }
 
@@ -643,12 +941,10 @@
           this.randomNormalSpare = null;
           return spare;
         }
-
         let u = 0;
         let v = 0;
         while (u === 0) u = Math.random();
         while (v === 0) v = Math.random();
-
         const mag = Math.sqrt(-2 * Math.log(u));
         const z0 = mag * Math.cos(2 * Math.PI * v);
         const z1 = mag * Math.sin(2 * Math.PI * v);
@@ -661,17 +957,14 @@
       }
     }
 
-    /*****************************************************************************
-     * VIEW: Canvas Renderer
-     * Reads model state and draws it. Does not mutate simulation physics.
-     *****************************************************************************/
-    class CanvasView {
+    class SimulationView {
       constructor(canvas, engine) {
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
         this.engine = engine;
         this.dpr = Math.max(1, window.devicePixelRatio || 1);
-        this.bounds = { scale: 1, ox: 0, oy: 0, w: 0, h: 0 };
+        this.vessel = { x: 0, y: 0, w: 0, h: 0 };
+        this.graph = { x: 0, y: 0, w: 0, h: 0 };
         this.resize();
       }
 
@@ -682,149 +975,124 @@
         this.canvas.height = Math.floor(rect.height * this.dpr);
         this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
-        const pad = 58;
-        const usableW = Math.max(200, rect.width - pad * 2);
-        const usableH = Math.max(260, rect.height - pad * 2);
-        const scale = Math.min(usableW / this.engine.width, usableH / this.engine.height);
-        const simW = this.engine.width * scale;
-        const simH = this.engine.height * scale;
+        const cssW = rect.width;
+        const cssH = rect.height;
+        const margin = 48;
+        const graphW = Math.min(310, Math.max(245, cssW * 0.28));
+        const vesselW = Math.max(270, cssW - graphW - margin * 3);
+        const vesselH = Math.max(420, cssH - margin * 2);
 
-        this.bounds = {
-          scale,
-          ox: (rect.width - simW) / 2,
-          oy: (rect.height - simH) / 2,
-          w: simW,
-          h: simH
+        this.vessel = {
+          x: margin,
+          y: margin,
+          w: Math.min(520, vesselW),
+          h: vesselH
+        };
+        this.graph = {
+          x: this.vessel.x + this.vessel.w + margin,
+          y: margin + 24,
+          w: graphW,
+          h: vesselH - 48
         };
       }
 
       draw() {
         const ctx = this.ctx;
-        const cssW = this.canvas.width / this.dpr;
-        const cssH = this.canvas.height / this.dpr;
-        ctx.clearRect(0, 0, cssW, cssH);
-
-        this.drawBackground(ctx, cssW, cssH);
-        this.drawSimulationVessel(ctx);
-        this.drawThermalGradient(ctx);
-        this.drawLiquidWater(ctx);
+        const w = this.canvas.width / this.dpr;
+        const h = this.canvas.height / this.dpr;
+        ctx.clearRect(0, 0, w, h);
+        this.drawBackground(ctx, w, h);
+        this.drawVesselFrame(ctx);
+        this.drawLiquid(ctx);
         this.drawIce(ctx);
-        this.drawCloudiness(ctx);
-        this.drawFrontLine(ctx);
+        this.drawUndercoolingZone(ctx);
+        this.drawConcentrationTracerParticles(ctx);
+        this.drawInterface(ctx);
+        this.drawSolidInclusions(ctx);
         this.drawParticles(ctx);
-        this.drawAnnotations(ctx);
+        this.drawGraph(ctx);
+        this.drawLabels(ctx);
       }
 
-      sx(x) {
-        return this.bounds.ox + x * this.bounds.scale;
-      }
-
-      sy(y) {
-        return this.bounds.oy + (this.engine.height - y) * this.bounds.scale;
-      }
+      sx(x) { return this.vessel.x + x * this.vessel.w; }
+      sy(y) { return this.vessel.y + (1 - y) * this.vessel.h; }
 
       drawBackground(ctx, w, h) {
-        const gradient = ctx.createRadialGradient(w * 0.62, h * 0.12, 30, w * 0.62, h * 0.12, Math.max(w, h));
-        gradient.addColorStop(0, "rgba(30, 64, 105, 0.62)");
-        gradient.addColorStop(0.45, "rgba(8, 17, 31, 0.35)");
-        gradient.addColorStop(1, "rgba(2, 6, 23, 0.92)");
-        ctx.fillStyle = gradient;
+        const grad = ctx.createRadialGradient(w * 0.62, h * 0.18, 20, w * 0.62, h * 0.18, Math.max(w, h));
+        grad.addColorStop(0, "rgba(30, 64, 105, 0.55)");
+        grad.addColorStop(0.45, "rgba(8, 17, 31, 0.52)");
+        grad.addColorStop(1, "rgba(2, 6, 23, 0.95)");
+        ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
       }
 
-      drawSimulationVessel(ctx) {
-        const b = this.bounds;
+      drawVesselFrame(ctx) {
+        const v = this.vessel;
         ctx.save();
-        ctx.translate(b.ox, b.oy);
-
-        ctx.shadowColor = "rgba(125, 211, 252, 0.20)";
-        ctx.shadowBlur = 24;
-        ctx.strokeStyle = "rgba(220, 245, 255, 0.40)";
+        ctx.shadowColor = "rgba(125, 211, 252, 0.22)";
+        ctx.shadowBlur = 28;
+        ctx.strokeStyle = "rgba(220, 245, 255, 0.45)";
         ctx.lineWidth = 2;
-        this.roundRectPath(ctx, 0, 0, b.w, b.h, 18);
+        this.roundRectPath(ctx, v.x, v.y, v.w, v.h, 20);
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
         ctx.lineWidth = 1;
-        for (let i = 1; i < 6; i++) {
-          const y = (b.h / 6) * i;
+        for (let i = 1; i < 8; i++) {
+          const y = v.y + (v.h / 8) * i;
           ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(b.w, y);
+          ctx.moveTo(v.x, y);
+          ctx.lineTo(v.x + v.w, y);
           ctx.stroke();
         }
 
-        ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-        this.roundRectPath(ctx, -16, 0, 10, b.h, 6);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.045)";
+        this.roundRectPath(ctx, v.x - 16, v.y, 9, v.h, 6);
         ctx.fill();
-        this.roundRectPath(ctx, b.w + 6, 0, 10, b.h, 6);
+        this.roundRectPath(ctx, v.x + v.w + 7, v.y, 9, v.h, 6);
         ctx.fill();
-
         ctx.restore();
       }
 
-      drawThermalGradient(ctx) {
-        const b = this.bounds;
-        const x = b.ox + b.w + 30;
-        const y = b.oy;
-        const w = 14;
-        const h = b.h;
-        const grad = ctx.createLinearGradient(0, y + h, 0, y);
-        grad.addColorStop(0, "rgba(59, 130, 246, 0.95)");
-        grad.addColorStop(0.5, "rgba(224, 242, 254, 0.72)");
-        grad.addColorStop(1, "rgba(251, 191, 36, 0.90)");
-
-        ctx.save();
-        this.roundRectPath(ctx, x, y, w, h, 999);
-        ctx.fillStyle = grad;
-        ctx.fill();
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
-        ctx.stroke();
-
-        const zeroY = this.sy(this.engine.targetFrontY());
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.86)";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x - 4, zeroY);
-        ctx.lineTo(x + w + 4, zeroY);
-        ctx.stroke();
-
-        ctx.fillStyle = "rgba(234, 245, 255, 0.86)";
-        ctx.font = "12px ui-sans-serif, system-ui";
-        ctx.textAlign = "left";
-        ctx.fillText(`${this.engine.T_ambient.toFixed(0)} °C`, x + 22, y + 10);
-        ctx.fillText("0 °C", x + 22, zeroY + 4);
-        ctx.fillText(`${this.engine.T_cool.toFixed(0)} °C`, x + 22, y + h);
-        ctx.restore();
-      }
-
-      drawLiquidWater(ctx) {
-        const b = this.bounds;
-        const frontScreenY = this.sy(this.engine.frontY);
-        const topY = b.oy;
-        const liquidH = Math.max(0, frontScreenY - topY);
+      drawLiquid(ctx) {
+        const v = this.vessel;
+        const e = this.engine;
+        const frontScreen = this.sy(e.frontY());
+        const liquidH = Math.max(0, frontScreen - v.y);
         if (liquidH <= 0) return;
-
-        const gradient = ctx.createLinearGradient(0, topY, 0, frontScreenY);
-        gradient.addColorStop(0, "rgba(14, 165, 233, 0.24)");
-        gradient.addColorStop(0.52, "rgba(56, 189, 248, 0.17)");
-        gradient.addColorStop(1, "rgba(12, 74, 110, 0.30)");
 
         ctx.save();
         this.clipVessel(ctx);
-        ctx.fillStyle = gradient;
-        ctx.fillRect(b.ox, topY, b.w, liquidH);
+        const grad = ctx.createLinearGradient(0, v.y, 0, frontScreen);
+        grad.addColorStop(0, "rgba(14, 165, 233, 0.22)");
+        grad.addColorStop(0.55, "rgba(56, 189, 248, 0.14)");
+        grad.addColorStop(1, "rgba(2, 132, 199, 0.22)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(v.x, v.y, v.w, liquidH);
 
-        ctx.globalAlpha = 0.14;
-        ctx.strokeStyle = "rgba(200, 245, 255, 0.45)";
+        const n = e.nodeCount;
+        const maxC = Math.max((e.gasC0 + e.mineralC0) * 3, this.maxTotalC(), 0.001);
+        for (let i = e.interfaceIndex + 1; i < n; i++) {
+          const y0 = this.sy(i / (n - 1));
+          const y1 = this.sy((i + 1) / (n - 1));
+          const cellH = Math.max(1, y0 - y1 + 1);
+          const totalC = e.totalCAt(i);
+          const concentrationAlpha = this.clamp((totalC / maxC) * 0.34, 0, 0.34);
+          ctx.fillStyle = `rgba(245, 158, 11, ${concentrationAlpha})`;
+          ctx.fillRect(v.x, y1, v.w, cellH);
+        }
+
+        ctx.globalAlpha = 0.12;
+        ctx.strokeStyle = "rgba(200, 245, 255, 0.55)";
         ctx.lineWidth = 1;
         for (let i = 0; i < 9; i++) {
-          const y = topY + 18 + i * 43 + Math.sin(performance.now() / 1100 + i) * 3;
+          const y = v.y + 22 + i * 44 + Math.sin(performance.now() / 1200 + i) * 3;
+          if (y > frontScreen - 4) continue;
           ctx.beginPath();
-          for (let x = b.ox; x <= b.ox + b.w; x += 12) {
-            const wave = Math.sin(x / 28 + i * 0.75 + performance.now() / 1500) * 2.2;
-            if (x === b.ox) ctx.moveTo(x, y + wave);
+          for (let x = v.x; x <= v.x + v.w; x += 12) {
+            const wave = Math.sin(x / 28 + i * 0.7 + performance.now() / 1500) * 2.1;
+            if (x === v.x) ctx.moveTo(x, y + wave);
             else ctx.lineTo(x, y + wave);
           }
           ctx.stroke();
@@ -833,135 +1101,203 @@
       }
 
       drawIce(ctx) {
-        const b = this.bounds;
-        const frontScreenY = this.sy(this.engine.frontY);
-        const bottomY = b.oy + b.h;
-        const iceH = Math.max(0, bottomY - frontScreenY);
-        if (iceH <= 0) return;
-
-        const metrics = this.engine.metrics();
-        const cleanAlpha = 0.08 + (1 - metrics.clarity) * 0.16;
-        const gradient = ctx.createLinearGradient(0, frontScreenY, 0, bottomY);
-        gradient.addColorStop(0, `rgba(225, 247, 255, ${cleanAlpha})`);
-        gradient.addColorStop(0.5, `rgba(186, 230, 253, ${cleanAlpha + 0.03})`);
-        gradient.addColorStop(1, `rgba(240, 249, 255, ${cleanAlpha + 0.06})`);
-
+        const v = this.vessel;
+        const n = this.engine.nodeCount;
         ctx.save();
         this.clipVessel(ctx);
-        ctx.fillStyle = gradient;
-        ctx.fillRect(b.ox, frontScreenY, b.w, iceH);
 
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.13)";
-        ctx.lineWidth = 1;
-        const spacing = 34 * b.scale;
-        for (let x = b.ox - b.h; x < b.ox + b.w + b.h; x += spacing) {
-          ctx.beginPath();
-          ctx.moveTo(x, bottomY);
-          ctx.lineTo(x + b.h * 0.42, frontScreenY);
-          ctx.stroke();
+        for (let i = 0; i <= this.engine.interfaceIndex; i++) {
+          if (this.engine.State_grid[i] !== 1) continue;
+          const yTop = this.sy((i + 1) / (n - 1));
+          const yBot = this.sy(i / (n - 1));
+          const cellH = Math.max(1, yBot - yTop + 1);
+          const cloud = this.engine.cloud_grid[i];
+          if (cloud <= 0.01) {
+            ctx.fillStyle = "rgba(186, 230, 253, 0.075)";
+          } else {
+            const white = this.clamp(0.16 + cloud * 0.62, 0.16, 0.84);
+            ctx.fillStyle = `rgba(245, 247, 250, ${white})`;
+          }
+          ctx.fillRect(v.x, yTop, v.w, cellH);
         }
-        for (let x = b.ox; x < b.ox + b.w + b.h; x += spacing * 1.25) {
+
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+        ctx.lineWidth = 1;
+        const frontScreen = this.sy(this.engine.frontY());
+        const bottom = v.y + v.h;
+        for (let x = v.x - v.h; x < v.x + v.w + v.h; x += 38) {
           ctx.beginPath();
-          ctx.moveTo(x, frontScreenY);
-          ctx.lineTo(x - b.h * 0.36, bottomY);
+          ctx.moveTo(x, bottom);
+          ctx.lineTo(x + v.h * 0.36, frontScreen);
           ctx.stroke();
         }
         ctx.restore();
       }
 
-      drawCloudiness(ctx) {
-        const b = this.bounds;
-        if (this.engine.frontY <= 0) return;
-
-        const cell = 22;
-        const cols = Math.ceil(this.engine.width / cell);
-        const rows = Math.ceil(this.engine.height / cell);
-        const counts = new Array(cols * rows).fill(0);
-
-        for (const p of this.engine.particles) {
-          if (!p.isTrapped) continue;
-          const cx = Math.min(cols - 1, Math.max(0, Math.floor(p.x / cell)));
-          const cy = Math.min(rows - 1, Math.max(0, Math.floor(p.y / cell)));
-          counts[cy * cols + cx] += p.type === "gas" ? 1.4 : 1.0;
+      drawUndercoolingZone(ctx) {
+        const v = this.vessel;
+        const n = this.engine.nodeCount;
+        ctx.save();
+        this.clipVessel(ctx);
+        for (let i = this.engine.interfaceIndex + 1; i < n; i++) {
+          if (this.engine.undercooled_grid[i] !== 1) continue;
+          const yTop = this.sy((i + 1) / (n - 1));
+          const yBot = this.sy(i / (n - 1));
+          ctx.fillStyle = "rgba(251, 113, 133, 0.22)";
+          ctx.fillRect(v.x, yTop, v.w, Math.max(1, yBot - yTop + 1));
         }
+        ctx.restore();
+      }
+
+      drawInterface(ctx) {
+        const v = this.vessel;
+        const y = this.sy(this.engine.frontY());
+        const unstable = this.engine.isUnstable;
+        ctx.save();
+        this.clipVessel(ctx);
+
+        if (unstable) {
+          const amp = 6 + Math.min(24, this.engine.instabilityScore * 10);
+          ctx.strokeStyle = "rgba(251, 113, 133, 0.95)";
+          ctx.lineWidth = 2.4;
+          ctx.beginPath();
+          for (let x = v.x; x <= v.x + v.w; x += 8) {
+            const jag = Math.sin(x * 0.09 + performance.now() / 130) * amp * 0.55 +
+                        Math.sin(x * 0.23 + performance.now() / 210) * amp * 0.28;
+            const yy = y + jag;
+            if (x === v.x) ctx.moveTo(x, yy);
+            else ctx.lineTo(x, yy);
+          }
+          ctx.stroke();
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.38)";
+          ctx.lineWidth = 7;
+          ctx.beginPath();
+          ctx.moveTo(v.x, y);
+          ctx.lineTo(v.x + v.w, y);
+          ctx.stroke();
+        } else {
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.98)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(v.x, y);
+          ctx.lineTo(v.x + v.w, y);
+          ctx.stroke();
+          ctx.strokeStyle = "rgba(125, 211, 252, 0.33)";
+          ctx.lineWidth = 8;
+          ctx.beginPath();
+          ctx.moveTo(v.x, y);
+          ctx.lineTo(v.x + v.w, y);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      drawConcentrationTracerParticles(ctx) {
+        const v = this.vessel;
+        const e = this.engine;
+        const n = e.nodeCount;
+        const start = e.interfaceIndex + 1;
+        if (start >= n) return;
+
+        // This layer is an animated concentration-proxy overlay, not real trapped
+        // particles. Restrict it to the solute-enriched boundary layer so the bulk
+        // melt does not look like it contains fixed background inclusions.
+        const lookahead = Math.min(n - 1, start + 30);
+        const bulkGas = this.averageGridRange(e.C_gas, lookahead + 1, n) || e.gasC0 || 0.0005;
+        const bulkMineral = this.averageGridRange(e.C_mineral, lookahead + 1, n) || e.mineralC0 || 0.0005;
+        const timePhase = performance.now() * 0.001;
 
         ctx.save();
         this.clipVessel(ctx);
-        for (let cy = 0; cy < rows; cy++) {
-          for (let cx = 0; cx < cols; cx++) {
-            const count = counts[cy * cols + cx];
-            if (count <= 0) continue;
+        for (let i = start; i <= lookahead; i++) {
+          const y0 = this.sy(i / (n - 1));
+          const y1 = this.sy((i + 1) / (n - 1));
+          const cellTop = Math.min(y0, y1);
+          const cellH = Math.max(2, Math.abs(y0 - y1));
 
-            const x = cx * cell + cell / 2;
-            const y = cy * cell + cell / 2;
-            if (y > this.engine.frontY + cell) continue;
+          const gasEnrichment = e.C_gas[i] / Math.max(bulkGas, 0.0005);
+          const mineralEnrichment = e.C_mineral[i] / Math.max(bulkMineral, 0.0005);
+          this.drawSpeciesTracerDots(ctx, i, "gas", gasEnrichment, v.x, cellTop, v.w, cellH, timePhase);
+          this.drawSpeciesTracerDots(ctx, i, "mineral", mineralEnrichment, v.x, cellTop, v.w, cellH, timePhase + 9.7);
+        }
+        ctx.restore();
+      }
 
-            const screenX = this.sx(x);
-            const screenY = this.sy(y);
-            const r = Math.max(5, this.bounds.scale * cell * (0.45 + 0.08 * Math.min(4, count)));
-            const alpha = Math.min(0.60, 0.08 + count * 0.055);
-            const cloud = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, r * 1.9);
-            cloud.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
-            cloud.addColorStop(0.55, `rgba(226, 244, 255, ${alpha * 0.42})`);
-            cloud.addColorStop(1, "rgba(255, 255, 255, 0)");
-            ctx.fillStyle = cloud;
+      drawSpeciesTracerDots(ctx, cellIndex, type, enrichment, x, y, w, h, timePhase) {
+        if (enrichment < 1.12) return;
+        const density = this.clamp((enrichment - 1.0) / 2.5, 0, 1);
+        if (density < 0.05) return;
+
+        const maxDots = type === "gas" ? 9 : 7;
+        const dotCount = Math.min(maxDots, Math.floor(density * maxDots + 0.5));
+        const offset = type === "gas" ? 17 : 43;
+
+        for (let d = 0; d < dotCount; d++) {
+          const baseX = this.hash01(cellIndex * 97 + d * 131 + offset);
+          const baseY = this.hash01(cellIndex * 193 + d * 71 + offset * 3);
+          const driftX = Math.sin(timePhase * 1.7 + cellIndex * 0.31 + d * 1.9) * 0.018;
+          const driftY = Math.cos(timePhase * 1.3 + cellIndex * 0.27 + d * 2.4) * 0.18;
+          const rx = (baseX + driftX + 1) % 1;
+          const ry = this.clamp(baseY + driftY, 0.05, 0.95);
+          const px = x + rx * w;
+          const py = y + ry * h;
+
+          if (type === "gas") {
             ctx.beginPath();
-            ctx.arc(screenX, screenY, r * 1.9, 0, Math.PI * 2);
+            ctx.arc(px, py, 0.9 + density * 1.05, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(248, 250, 252, ${0.10 + density * 0.30})`;
             ctx.fill();
+          } else {
+            const s = 1.2 + density * 1.25;
+            ctx.fillStyle = `rgba(251, 191, 36, ${0.10 + density * 0.30})`;
+            ctx.fillRect(px - s / 2, py - s / 2, s, s);
+          }
+        }
+      }
+
+      drawSolidInclusions(ctx) {
+        ctx.save();
+        this.clipVessel(ctx);
+        for (const marker of this.engine.solidInclusions) {
+          const x = this.sx(marker.x);
+          const y = this.sy(marker.y);
+          const r = marker.radius;
+          if (marker.type === "gas") {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(248, 250, 252, ${marker.opacity})`;
+            ctx.fill();
+          } else {
+            const s = r * 1.55;
+            ctx.fillStyle = `rgba(251, 191, 36, ${marker.opacity})`;
+            ctx.fillRect(x - s / 2, y - s / 2, s, s);
           }
         }
         ctx.restore();
       }
 
-      drawFrontLine(ctx) {
-        const b = this.bounds;
-        const y = this.sy(this.engine.frontY);
-
-        ctx.save();
-        this.clipVessel(ctx);
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.92)";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        for (let x = b.ox; x <= b.ox + b.w; x += 10) {
-          const ripple = Math.sin((x + performance.now() / 40) / 19) * 0.8;
-          if (x === b.ox) ctx.moveTo(x, y + ripple);
-          else ctx.lineTo(x, y + ripple);
-        }
-        ctx.stroke();
-
-        ctx.strokeStyle = "rgba(125, 211, 252, 0.35)";
-        ctx.lineWidth = 8;
-        ctx.beginPath();
-        ctx.moveTo(b.ox, y);
-        ctx.lineTo(b.ox + b.w, y);
-        ctx.stroke();
-        ctx.restore();
-      }
-
       drawParticles(ctx) {
-        const b = this.bounds;
         ctx.save();
         this.clipVessel(ctx);
-
         for (const p of this.engine.particles) {
           const x = this.sx(p.x);
           const y = this.sy(p.y);
-          const radius = Math.max(1.3, p.radius * b.scale);
+          const r = Math.max(1.5, p.radius);
 
           if (p.type === "gas") {
             ctx.beginPath();
-            ctx.arc(x, y, p.isTrapped ? radius * 1.55 : radius, 0, Math.PI * 2);
-            ctx.fillStyle = p.isTrapped ? "rgba(248, 250, 252, 0.92)" : "rgba(241, 245, 249, 0.74)";
+            ctx.arc(x, y, p.trapped ? r * 1.45 : r, 0, Math.PI * 2);
+            ctx.fillStyle = p.trapped ? "rgba(248, 250, 252, 0.94)" : "rgba(248, 250, 252, 0.70)";
             ctx.fill();
-            ctx.strokeStyle = p.isTrapped ? "rgba(148, 163, 184, 0.78)" : "rgba(255, 255, 255, 0.38)";
+            ctx.strokeStyle = "rgba(148, 163, 184, 0.62)";
             ctx.lineWidth = 1;
             ctx.stroke();
           } else {
-            const size = Math.max(2.3, radius * 1.65);
+            const size = Math.max(2.4, r * 1.45);
             ctx.save();
             ctx.translate(x, y);
-            ctx.rotate(p.jitterSeed);
-            ctx.fillStyle = p.isTrapped ? "rgba(245, 158, 11, 0.95)" : "rgba(251, 191, 36, 0.82)";
+            ctx.rotate(p.phase);
+            ctx.fillStyle = p.trapped ? "rgba(245, 158, 11, 0.95)" : "rgba(251, 191, 36, 0.78)";
             ctx.strokeStyle = "rgba(120, 53, 15, 0.55)";
             ctx.lineWidth = 1;
             ctx.fillRect(-size / 2, -size / 2, size, size);
@@ -969,42 +1305,131 @@
             ctx.restore();
           }
         }
-
         ctx.restore();
       }
 
-      drawAnnotations(ctx) {
-        const b = this.bounds;
-        const frontY = this.sy(this.engine.frontY);
-        const targetY = this.sy(this.engine.targetFrontY());
+      drawGraph(ctx) {
+        const g = this.graph;
+        const e = this.engine;
+        const n = e.nodeCount;
+        const pad = 14;
+        const plot = { x: g.x + pad, y: g.y + 42, w: g.w - pad * 2, h: g.h - 78 };
 
         ctx.save();
-        ctx.font = "12px ui-sans-serif, system-ui";
-        ctx.textAlign = "right";
-        ctx.fillStyle = "rgba(234, 245, 255, 0.86)";
-        ctx.fillText("ambient / water surface", b.ox + b.w, b.oy - 12);
-        ctx.fillText("cooling plate", b.ox + b.w, b.oy + b.h + 24);
+        this.roundRectPath(ctx, g.x, g.y, g.w, g.h, 18);
+        ctx.fillStyle = "rgba(2, 6, 23, 0.56)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
+        ctx.stroke();
 
-        ctx.textAlign = "left";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
-        ctx.fillText("freezing front", b.ox + 10, frontY - 8);
+        ctx.fillStyle = "rgba(237, 247, 255, 0.92)";
+        ctx.font = "700 13px ui-sans-serif, system-ui";
+        ctx.fillText("1D field profiles", g.x + pad, g.y + 24);
 
-        ctx.setLineDash([5, 5]);
-        ctx.strokeStyle = "rgba(250, 204, 21, 0.45)";
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+          const x = plot.x + (plot.w / 4) * i;
+          ctx.beginPath();
+          ctx.moveTo(x, plot.y);
+          ctx.lineTo(x, plot.y + plot.h);
+          ctx.stroke();
+        }
+        for (let i = 0; i <= 5; i++) {
+          const y = plot.y + (plot.h / 5) * i;
+          ctx.beginPath();
+          ctx.moveTo(plot.x, y);
+          ctx.lineTo(plot.x + plot.w, y);
+          ctx.stroke();
+        }
+
+        const allTf = [];
+        for (let i = 0; i < n; i++) allTf.push(e.freezingPointAtIndex(i));
+        const Tmin = Math.min(-32, e.T_cool, ...Array.from(e.T_grid), ...allTf) - 1;
+        const Tmax = Math.max(26, e.T_ambient, ...Array.from(e.T_grid), 1) + 1;
+        const Cmax = Math.max((e.gasC0 + e.mineralC0) * 3, this.maxTotalC(), 0.001);
+
+        const yForIndex = (i) => plot.y + plot.h - (i / (n - 1)) * plot.h;
+        const xForTemp = (T) => plot.x + this.clamp((T - Tmin) / (Tmax - Tmin), 0, 1) * plot.w;
+        const xForC = (C) => plot.x + this.clamp(C / Cmax, 0, 1) * plot.w;
+
+        for (let i = e.interfaceIndex + 1; i < n; i++) {
+          if (e.undercooled_grid[i] !== 1) continue;
+          const y0 = yForIndex(i + 1);
+          const y1 = yForIndex(i);
+          ctx.fillStyle = "rgba(251, 113, 133, 0.17)";
+          ctx.fillRect(plot.x, y0, plot.w, Math.max(1, y1 - y0 + 1));
+        }
+
+        this.drawGraphLine(ctx, n, yForIndex, (i) => xForTemp(e.T_grid[i]), "rgba(56, 189, 248, 0.96)", 2.3);
+        this.drawGraphLine(ctx, n, yForIndex, (i) => xForC(e.totalCAt(i)), "rgba(245, 158, 11, 0.96)", 2.1);
+        this.drawGraphLine(ctx, n, yForIndex, (i) => xForTemp(e.freezingPointAtIndex(i)), "rgba(255, 255, 255, 0.92)", 1.9);
+        this.drawGraphLine(ctx, n, yForIndex, (i) => xForC(e.C_gas[i]), "rgba(229, 231, 235, 0.62)", 1.2);
+        this.drawGraphLine(ctx, n, yForIndex, (i) => xForC(e.C_mineral[i]), "rgba(251, 191, 36, 0.58)", 1.2);
+
+        const frontY = yForIndex(e.interfaceIndex);
+        ctx.strokeStyle = e.isUnstable ? "rgba(251, 113, 133, 0.95)" : "rgba(125, 211, 252, 0.95)";
+        ctx.setLineDash([6, 5]);
         ctx.beginPath();
-        ctx.moveTo(b.ox, targetY);
-        ctx.lineTo(b.ox + b.w, targetY);
+        ctx.moveTo(plot.x, frontY);
+        ctx.lineTo(plot.x + plot.w, frontY);
         ctx.stroke();
         ctx.setLineDash([]);
-        ctx.fillStyle = "rgba(253, 230, 138, 0.86)";
-        ctx.fillText("0 °C isotherm target", b.ox + 10, targetY + 16);
+
+        ctx.font = "11px ui-sans-serif, system-ui";
+        this.legendText(ctx, plot.x, g.y + g.h - 22, "T", "rgba(56, 189, 248, 0.96)");
+        this.legendText(ctx, plot.x + 48, g.y + g.h - 22, "C total", "rgba(245, 158, 11, 0.96)");
+        this.legendText(ctx, plot.x + 126, g.y + g.h - 22, "T_f", "rgba(255, 255, 255, 0.92)");
+        this.legendText(ctx, plot.x + 178, g.y + g.h - 22, "gas/min", "rgba(229, 231, 235, 0.70)");
+
+        ctx.fillStyle = "rgba(169, 189, 208, 0.92)";
+        ctx.fillText(`${Tmin.toFixed(0)} °C`, plot.x, plot.y + plot.h + 15);
+        ctx.textAlign = "right";
+        ctx.fillText(`${Tmax.toFixed(0)} °C / ${(Cmax * 100).toFixed(1)}% C`, plot.x + plot.w, plot.y + plot.h + 15);
+        ctx.textAlign = "left";
+        ctx.restore();
+      }
+
+      drawGraphLine(ctx, n, yForIndex, xForValue, color, width) {
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        for (let i = 0; i < n; i++) {
+          const x = xForValue(i);
+          const y = yForIndex(i);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      legendText(ctx, x, y, label, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y - 8, 18, 3);
+        ctx.fillStyle = "rgba(237, 247, 255, 0.84)";
+        ctx.fillText(label, x + 22, y - 4);
+      }
+
+      drawLabels(ctx) {
+        const v = this.vessel;
+        const m = this.engine.metrics();
+        ctx.save();
+        ctx.fillStyle = "rgba(237, 247, 255, 0.88)";
+        ctx.font = "12px ui-sans-serif, system-ui";
+        ctx.textAlign = "right";
+        ctx.fillText("ambient / water surface", v.x + v.w, v.y - 12);
+        ctx.fillText("cooling plate", v.x + v.w, v.y + v.h + 24);
+        ctx.textAlign = "left";
+        ctx.fillStyle = this.engine.isUnstable ? "rgba(251, 113, 133, 0.95)" : "rgba(125, 211, 252, 0.95)";
+        ctx.fillText(`${m.morphology.toLowerCase()} interface`, v.x + 12, this.sy(this.engine.frontY()) - 10);
         ctx.restore();
       }
 
       clipVessel(ctx) {
-        const b = this.bounds;
-        this.roundRectPath(ctx, b.ox, b.oy, b.w, b.h, 18);
+        const v = this.vessel;
+        this.roundRectPath(ctx, v.x, v.y, v.w, v.h, 20);
         ctx.clip();
       }
 
@@ -1022,159 +1447,199 @@
         ctx.quadraticCurveTo(x, y, x + radius, y);
         ctx.closePath();
       }
+
+      maxGridValue(grid) {
+        let max = 0;
+        for (let i = 0; i < grid.length; i++) max = Math.max(max, grid[i]);
+        return max;
+      }
+
+      averageGridRange(grid, start, end) {
+        const lo = Math.max(0, Math.min(grid.length, start));
+        const hi = Math.max(lo, Math.min(grid.length, end));
+        let total = 0;
+        let count = 0;
+        for (let i = lo; i < hi; i++) {
+          total += grid[i];
+          count++;
+        }
+        return count > 0 ? total / count : 0;
+      }
+
+      hash01(seed) {
+        const x = Math.sin(seed * 12.9898) * 43758.5453123;
+        return x - Math.floor(x);
+      }
+
+      maxTotalC() {
+        let max = 0;
+        for (let i = 0; i < this.engine.nodeCount; i++) {
+          max = Math.max(max, this.engine.totalCAt(i));
+        }
+        return max;
+      }
+
+      clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
     }
 
-    /*****************************************************************************
-     * CONTROLLER: DOM bindings and animation loop
-     * Owns user interactions and coordinates Model -> View updates.
-     *****************************************************************************/
     const engine = new PhysicsEngine({
-      width: 420,
-      height: 620,
+      nodeCount: 160,
       T_cool: -18,
-      T_ambient: 12,
-      initialGasCount: 240,
-      initialMineralCount: 140
+      T_ambient: 8,
+      mixing: 0.35,
+      gasC0: 0.012,
+      mineralC0: 0.008,
+      gasK: 0.010,
+      mineralK: 0.100
     });
 
     const canvas = document.getElementById("simCanvas");
-    const view = new CanvasView(canvas, engine);
+    const view = new SimulationView(canvas, engine);
 
-    const controls = {
+    const ui = {
       playPauseBtn: document.getElementById("playPauseBtn"),
       resetBtn: document.getElementById("resetBtn"),
-      speedSlider: document.getElementById("speedSlider"),
+      timeScaleSlider: document.getElementById("timeScaleSlider"),
+      timeScaleValue: document.getElementById("timeScaleValue"),
       bottomTempSlider: document.getElementById("bottomTempSlider"),
-      ambientTempSlider: document.getElementById("ambientTempSlider"),
-      gasSlider: document.getElementById("gasSlider"),
-      mineralSlider: document.getElementById("mineralSlider"),
-      speedValue: document.getElementById("speedValue"),
       bottomTempValue: document.getElementById("bottomTempValue"),
+      ambientTempSlider: document.getElementById("ambientTempSlider"),
       ambientTempValue: document.getElementById("ambientTempValue"),
+      mixingSlider: document.getElementById("mixingSlider"),
+      mixingValue: document.getElementById("mixingValue"),
+      gasSlider: document.getElementById("gasSlider"),
       gasValue: document.getElementById("gasValue"),
+      gasKSlider: document.getElementById("gasKSlider"),
+      gasKValue: document.getElementById("gasKValue"),
+      mineralSlider: document.getElementById("mineralSlider"),
       mineralValue: document.getElementById("mineralValue"),
+      mineralKSlider: document.getElementById("mineralKSlider"),
+      mineralKValue: document.getElementById("mineralKValue"),
       frontMetric: document.getElementById("frontMetric"),
+      morphMetric: document.getElementById("morphMetric"),
+      underMetric: document.getElementById("underMetric"),
+      boundaryMetric: document.getElementById("boundaryMetric"),
+      gasTrapMetric: document.getElementById("gasTrapMetric"),
+      mineralTrapMetric: document.getElementById("mineralTrapMetric"),
       clarityMetric: document.getElementById("clarityMetric"),
-      trappedMetric: document.getElementById("trappedMetric"),
-      liquidMetric: document.getElementById("liquidMetric"),
-      targetMetric: document.getElementById("targetMetric"),
       timeMetric: document.getElementById("timeMetric")
     };
 
-    let playbackRate = Number(controls.speedSlider.value);
+    let timeScale = Number(ui.timeScaleSlider.value);
+    const FIXED_DT = 0.05;
+    const MAX_STEPS_PER_FRAME = 520;
+    let accumulator = 0;
     let lastTimestamp = performance.now();
-    let concentrationResetTimer = null;
 
-    // Fixed-step integration keeps the physical model independent of playback rate.
-    // The slider changes how many fixed physical seconds are simulated per wall-clock
-    // second, not the integration timestep itself.
-    const FIXED_PHYSICS_DT = 1 / 60;
-    const MAX_PHYSICS_STEPS_PER_FRAME = 240;
-    let simulationAccumulator = 0;
-
-    function updateControlLabels() {
-      controls.speedValue.textContent = `${playbackRate.toFixed(0)}x`;
-      controls.bottomTempValue.textContent = `${engine.T_cool.toFixed(0)} °C`;
-      controls.ambientTempValue.textContent = `${engine.T_ambient.toFixed(0)} °C`;
-      controls.gasValue.textContent = `${engine.initialGasCount.toFixed(0)} particles`;
-      controls.mineralValue.textContent = `${engine.initialMineralCount.toFixed(0)} particles`;
-      controls.playPauseBtn.textContent = engine.isPaused ? "Play" : "Pause";
+    function updateLabels() {
+      ui.playPauseBtn.textContent = engine.isPaused ? "Play" : "Pause";
+      ui.timeScaleValue.textContent = `${timeScale.toFixed(0)}x`;
+      ui.bottomTempValue.textContent = `${engine.T_cool.toFixed(0)} °C`;
+      ui.ambientTempValue.textContent = `${engine.T_ambient.toFixed(0)} °C`;
+      ui.mixingValue.textContent = `${Math.round(engine.mixing * 100)}%`;
+      ui.gasValue.textContent = `${(engine.gasC0 * 100).toFixed(1)}%`;
+      ui.mineralValue.textContent = `${(engine.mineralC0 * 100).toFixed(1)}%`;
+      ui.gasKValue.textContent = engine.gasK.toFixed(3);
+      ui.mineralKValue.textContent = engine.mineralK.toFixed(3);
     }
 
     function updateMetrics() {
       const m = engine.metrics();
-      controls.frontMetric.textContent = `${Math.round(m.frontFraction * 100)}%`;
-      controls.targetMetric.textContent = `${Math.round(m.targetFraction * 100)}%`;
-      controls.clarityMetric.textContent = `${Math.round(m.clarity * 100)}%`;
-      controls.trappedMetric.textContent = String(m.trapped);
-      controls.liquidMetric.textContent = String(m.liquid);
-      controls.timeMetric.textContent = `${Math.round(m.elapsed)}s`;
+      ui.frontMetric.textContent = `${Math.round(m.frontFraction * 100)}%`;
+      ui.morphMetric.textContent = m.morphology;
+      ui.morphMetric.style.color = engine.isUnstable ? "var(--red)" : "var(--green)";
+      ui.underMetric.textContent = `${m.maxUndercooling.toFixed(2)} °C`;
+      ui.boundaryMetric.textContent = `${(m.boundaryC * 100).toFixed(1)}%`;
+      ui.gasTrapMetric.textContent = `${m.gasTrapped + m.gasSolidMarkers}`;
+      ui.mineralTrapMetric.textContent = `${m.mineralTrapped + m.mineralSolidMarkers}`;
+      ui.clarityMetric.textContent = `${Math.round(m.clarity * 100)}%`;
+      ui.timeMetric.textContent = `${Math.round(m.elapsed)}s`;
     }
 
-    function scheduleSoftParticleReset() {
-      window.clearTimeout(concentrationResetTimer);
-      concentrationResetTimer = window.setTimeout(() => {
-        engine.softResetParticles();
-        updateMetrics();
-      }, 120);
-    }
-
-    controls.playPauseBtn.addEventListener("click", () => {
-      engine.isPaused = !engine.isPaused;
-      updateControlLabels();
-    });
-
-    controls.resetBtn.addEventListener("click", () => {
+    function resetAfterParameterChange() {
       engine.reset();
-      simulationAccumulator = 0;
+      accumulator = 0;
+      updateLabels();
       updateMetrics();
+    }
+
+    ui.playPauseBtn.addEventListener("click", () => {
+      engine.isPaused = !engine.isPaused;
+      accumulator = 0;
+      updateLabels();
     });
 
-    controls.speedSlider.addEventListener("input", (event) => {
-      playbackRate = Number(event.target.value);
-      updateControlLabels();
+    ui.resetBtn.addEventListener("click", resetAfterParameterChange);
+
+    ui.timeScaleSlider.addEventListener("input", (event) => {
+      timeScale = Number(event.target.value);
+      updateLabels();
     });
 
-    controls.bottomTempSlider.addEventListener("input", (event) => {
+    ui.bottomTempSlider.addEventListener("input", (event) => {
       engine.T_cool = Number(event.target.value);
-      updateControlLabels();
-      updateMetrics();
+      updateLabels();
     });
 
-    controls.ambientTempSlider.addEventListener("input", (event) => {
+    ui.ambientTempSlider.addEventListener("input", (event) => {
       engine.T_ambient = Number(event.target.value);
-      updateControlLabels();
-      updateMetrics();
+      updateLabels();
     });
 
-    controls.gasSlider.addEventListener("input", (event) => {
-      engine.initialGasCount = Number(event.target.value);
-      updateControlLabels();
-      scheduleSoftParticleReset();
+    ui.mixingSlider.addEventListener("input", (event) => {
+      engine.mixing = Number(event.target.value) / 100;
+      updateLabels();
     });
 
-    controls.mineralSlider.addEventListener("input", (event) => {
-      engine.initialMineralCount = Number(event.target.value);
-      updateControlLabels();
-      scheduleSoftParticleReset();
+    ui.gasSlider.addEventListener("input", (event) => {
+      engine.gasC0 = Number(event.target.value) / 100;
+      resetAfterParameterChange();
     });
 
-    window.addEventListener("resize", () => {
-      view.resize();
+    ui.mineralSlider.addEventListener("input", (event) => {
+      engine.mineralC0 = Number(event.target.value) / 100;
+      resetAfterParameterChange();
     });
 
-    function animationLoop(timestamp) {
+    ui.gasKSlider.addEventListener("input", (event) => {
+      engine.gasK = Number(event.target.value);
+      resetAfterParameterChange();
+    });
+
+    ui.mineralKSlider.addEventListener("input", (event) => {
+      engine.mineralK = Number(event.target.value);
+      resetAfterParameterChange();
+    });
+
+    window.addEventListener("resize", () => view.resize());
+
+    function frame(timestamp) {
       const rawDt = Math.min((timestamp - lastTimestamp) / 1000, 0.25);
       lastTimestamp = timestamp;
 
       if (!engine.isPaused) {
-        simulationAccumulator += rawDt * playbackRate;
-
-        let stepsThisFrame = 0;
-        while (simulationAccumulator >= FIXED_PHYSICS_DT && stepsThisFrame < MAX_PHYSICS_STEPS_PER_FRAME) {
-          engine.update(FIXED_PHYSICS_DT);
-          simulationAccumulator -= FIXED_PHYSICS_DT;
-          stepsThisFrame++;
+        accumulator += rawDt * timeScale;
+        let steps = 0;
+        while (accumulator >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
+          engine.update(FIXED_DT);
+          accumulator -= FIXED_DT;
+          steps++;
         }
-
-        // If the tab stalls or the browser cannot keep up, drop excess backlog rather
-        // than increasing dt. This preserves fixed-step physics and only slows playback.
-        if (stepsThisFrame >= MAX_PHYSICS_STEPS_PER_FRAME) {
-          simulationAccumulator = 0;
-        }
+        if (steps >= MAX_STEPS_PER_FRAME) accumulator = 0;
       } else {
-        simulationAccumulator = 0;
+        accumulator = 0;
       }
 
       view.draw();
       updateMetrics();
-
-      window.requestAnimationFrame(animationLoop);
+      requestAnimationFrame(frame);
     }
 
-    updateControlLabels();
+    updateLabels();
     updateMetrics();
-    window.requestAnimationFrame(animationLoop);
+    requestAnimationFrame(frame);
   </script>
 </body>
 </html>
