@@ -1129,36 +1129,132 @@
 
       drawIce(ctx) {
         const v = this.vessel;
-        const n = this.engine.nodeCount;
+        const e = this.engine;
+        const n = e.nodeCount;
+        const frontScreen = this.sy(e.frontY());
+        const bottom = v.y + v.h;
+        const iceH = Math.max(0, bottom - frontScreen);
+        if (iceH <= 0) return;
+
         ctx.save();
         this.clipVessel(ctx);
 
-        for (let i = 0; i <= this.engine.interfaceIndex; i++) {
-          if (this.engine.State_grid[i] !== 1) continue;
-          const yTop = this.sy((i + 1) / (n - 1));
-          const yBot = this.sy(i / (n - 1));
-          const cellH = Math.max(1, yBot - yTop + 1);
-          const cloud = this.engine.cloud_grid[i];
-          if (cloud <= 0.01) {
-            ctx.fillStyle = "rgba(186, 230, 253, 0.075)";
-          } else {
-            const white = this.clamp(0.16 + cloud * 0.62, 0.16, 0.84);
-            ctx.fillStyle = `rgba(245, 247, 250, ${white})`;
-          }
-          ctx.fillRect(v.x, yTop, v.w, cellH);
-        }
+        // Continuous ice body, visually aligned with the lite widget. The grid
+        // still determines the physics, but it is not drawn as horizontal bands.
+        const metrics = e.metrics();
+        const baseAlpha = 0.07 + (1 - metrics.clarity) * 0.14;
+        const iceGradient = ctx.createLinearGradient(0, frontScreen, 0, bottom);
+        iceGradient.addColorStop(0, `rgba(225, 247, 255, ${baseAlpha})`);
+        iceGradient.addColorStop(0.5, `rgba(186, 230, 253, ${baseAlpha + 0.035})`);
+        iceGradient.addColorStop(1, `rgba(240, 249, 255, ${baseAlpha + 0.065})`);
+        ctx.fillStyle = iceGradient;
+        ctx.fillRect(v.x, frontScreen, v.w, iceH);
 
+        // Physical cloud history, but rendered only inside the exact solid cells
+        // that froze during unstable growth.
+        this.drawDendriticCloudLayers(ctx, frontScreen);
+
+        // Lite-style crystalline hatch/facet shading.
         ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
         ctx.lineWidth = 1;
-        const frontScreen = this.sy(this.engine.frontY());
-        const bottom = v.y + v.h;
-        for (let x = v.x - v.h; x < v.x + v.w + v.h; x += 38) {
+        const spacing = 34;
+        for (let x = v.x - v.h; x < v.x + v.w + v.h; x += spacing) {
           ctx.beginPath();
           ctx.moveTo(x, bottom);
-          ctx.lineTo(x + v.h * 0.36, frontScreen);
+          ctx.lineTo(x + v.h * 0.42, frontScreen);
           ctx.stroke();
         }
+        for (let x = v.x; x < v.x + v.w + v.h; x += spacing * 1.25) {
+          ctx.beginPath();
+          ctx.moveTo(x, frontScreen);
+          ctx.lineTo(x - v.h * 0.36, bottom);
+          ctx.stroke();
+        }
+
+        ctx.strokeStyle = "rgba(220, 245, 255, 0.06)";
+        ctx.lineWidth = 1;
+        for (let x = v.x + v.w * 0.16; x < v.x + v.w; x += v.w * 0.19) {
+          ctx.beginPath();
+          ctx.moveTo(x, frontScreen + 12);
+          ctx.lineTo(x + Math.sin(x) * 5, bottom - 8);
+          ctx.stroke();
+        }
+
         ctx.restore();
+      }
+
+      drawDendriticCloudLayers(ctx, frontScreen) {
+        const v = this.vessel;
+        const e = this.engine;
+        const n = e.nodeCount;
+        const bottom = v.y + v.h;
+        let i = 0;
+
+        while (i <= e.interfaceIndex) {
+          if (e.cloud_grid[i] <= 0.012) {
+            i++;
+            continue;
+          }
+
+          const start = i;
+          let end = i;
+          let sum = 0;
+          let maxCloud = 0;
+          while (end <= e.interfaceIndex && e.cloud_grid[end] > 0.012) {
+            sum += e.cloud_grid[end];
+            maxCloud = Math.max(maxCloud, e.cloud_grid[end]);
+            end++;
+          }
+
+          const avgCloud = sum / Math.max(1, end - start);
+          const yTop = Math.max(frontScreen, this.sy(end / (n - 1)));
+          const yBottom = Math.min(bottom, this.sy(start / (n - 1)));
+          if (yBottom > yTop + 0.5) {
+            this.drawSingleDendriticLayer(ctx, yTop, yBottom, avgCloud, maxCloud, start);
+          }
+
+          i = end;
+        }
+      }
+
+      drawSingleDendriticLayer(ctx, yTop, yBottom, avgCloud, maxCloud, seed) {
+        const v = this.vessel;
+        const bandH = yBottom - yTop;
+        const baseAlpha = this.clamp(0.10 + avgCloud * 0.38, 0.10, 0.58);
+
+        const layerGradient = ctx.createLinearGradient(0, yTop, 0, yBottom);
+        layerGradient.addColorStop(0, `rgba(255, 255, 255, ${baseAlpha * 0.30})`);
+        layerGradient.addColorStop(0.5, `rgba(245, 247, 250, ${baseAlpha})`);
+        layerGradient.addColorStop(1, `rgba(255, 255, 255, ${baseAlpha * 0.30})`);
+        ctx.fillStyle = layerGradient;
+        ctx.fillRect(v.x, yTop, v.w, bandH);
+
+        const strokeAlpha = this.clamp(0.10 + maxCloud * 0.24, 0.10, 0.34);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${strokeAlpha})`;
+        ctx.lineWidth = 1;
+        const spacingX = 16;
+        const rowStep = Math.max(7, Math.min(15, bandH * 0.45));
+        for (let y = yTop + 3; y < yBottom - 2; y += rowStep) {
+          for (let x = v.x + 4; x < v.x + v.w; x += spacingX) {
+            const jitter = (this.hash01(seed * 101 + Math.floor(x) * 7 + Math.floor(y) * 13) - 0.5) * 7;
+            const len = 5 + this.hash01(seed * 211 + Math.floor(x) * 3) * 9;
+            ctx.beginPath();
+            ctx.moveTo(x + jitter, y);
+            ctx.lineTo(x + jitter + len, Math.min(yBottom - 1, y + len * 0.42));
+            ctx.stroke();
+          }
+        }
+
+        // Subtle bounded edge cues show which layer formed unstably without
+        // reintroducing the full finite-difference grid.
+        ctx.strokeStyle = `rgba(255, 255, 255, ${this.clamp(0.08 + maxCloud * 0.16, 0.08, 0.22)})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(v.x, yTop);
+        ctx.lineTo(v.x + v.w, yTop);
+        ctx.moveTo(v.x, yBottom);
+        ctx.lineTo(v.x + v.w, yBottom);
+        ctx.stroke();
       }
 
       drawUndercoolingZone(ctx) {
