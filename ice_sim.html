@@ -1077,17 +1077,6 @@
         this.roundRectPath(ctx, v.x, v.y, v.w, v.h, 20);
         ctx.stroke();
         ctx.shadowBlur = 0;
-
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.09)";
-        ctx.lineWidth = 1;
-        for (let i = 1; i < 8; i++) {
-          const y = v.y + (v.h / 8) * i;
-          ctx.beginPath();
-          ctx.moveTo(v.x, y);
-          ctx.lineTo(v.x + v.w, y);
-          ctx.stroke();
-        }
-
         ctx.fillStyle = "rgba(255, 255, 255, 0.045)";
         this.roundRectPath(ctx, v.x - 16, v.y, 9, v.h, 6);
         ctx.fill();
@@ -1112,33 +1101,30 @@
         ctx.fillStyle = grad;
         ctx.fillRect(v.x, v.y, v.w, liquidH);
 
+        this.drawSmoothLiquidConcentrationTint(ctx, frontScreen);
+        ctx.restore();
+      }
+
+      drawSmoothLiquidConcentrationTint(ctx, frontScreen) {
+        const v = this.vessel;
+        const e = this.engine;
         const n = e.nodeCount;
+        const liquidH = Math.max(0, frontScreen - v.y);
+        if (liquidH <= 0) return;
+
         const maxC = Math.max((e.gasC0 + e.mineralC0) * 3, this.maxTotalC(), 0.001);
-        for (let i = e.interfaceIndex + 1; i < n; i++) {
-          const y0 = this.sy(i / (n - 1));
-          const y1 = this.sy((i + 1) / (n - 1));
-          const cellH = Math.max(1, y0 - y1 + 1);
+        const tint = ctx.createLinearGradient(0, v.y, 0, frontScreen);
+
+        for (let i = n - 1; i >= e.interfaceIndex + 1; i--) {
+          const screenY = this.sy(i / (n - 1));
+          const stop = this.clamp((screenY - v.y) / liquidH, 0, 1);
           const totalC = e.totalCAt(i);
-          const concentrationAlpha = this.clamp((totalC / maxC) * 0.34, 0, 0.34);
-          ctx.fillStyle = `rgba(245, 158, 11, ${concentrationAlpha})`;
-          ctx.fillRect(v.x, y1, v.w, cellH);
+          const alpha = this.clamp((totalC / maxC) * 0.34, 0, 0.34);
+          tint.addColorStop(stop, `rgba(245, 158, 11, ${alpha})`);
         }
 
-        ctx.globalAlpha = 0.12;
-        ctx.strokeStyle = "rgba(200, 245, 255, 0.55)";
-        ctx.lineWidth = 1;
-        for (let i = 0; i < 9; i++) {
-          const y = v.y + 22 + i * 44 + Math.sin(performance.now() / 1200 + i) * 3;
-          if (y > frontScreen - 4) continue;
-          ctx.beginPath();
-          for (let x = v.x; x <= v.x + v.w; x += 12) {
-            const wave = Math.sin(x / 28 + i * 0.7 + performance.now() / 1500) * 2.1;
-            if (x === v.x) ctx.moveTo(x, y + wave);
-            else ctx.lineTo(x, y + wave);
-          }
-          ctx.stroke();
-        }
-        ctx.restore();
+        ctx.fillStyle = tint;
+        ctx.fillRect(v.x, v.y, v.w, liquidH);
       }
 
       drawIce(ctx) {
