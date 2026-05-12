@@ -585,39 +585,59 @@
         const params = this.speciesParams(type);
         const field = type === "gas" ? this.C_gas : this.C_mineral;
         const solid = type === "gas" ? this.C_solid_gas : this.C_solid_mineral;
-        const old = field;
-        const next = new Float64Array(old);
-        const mixBoost = 1 + 32 * this.mixing * this.mixing;
-        const D_eff = params.D * mixBoost;
-        const coeff = D_eff * dt / (this.dy * this.dy);
         const start = this.interfaceIndex + 1;
 
-        for (let i = start; i < n; i++) {
-          const left = i - 1 <= this.interfaceIndex ? old[i] : old[i - 1];
-          const right = i === n - 1 ? old[i] : old[i + 1];
-          next[i] = Math.max(0, old[i] + coeff * (left - 2 * old[i] + right));
-        }
+        // Explicit diffusion is only stable below a Courant-like limit:
+        // D * dt / dy^2 <= about 0.5 in 1D. Strong artificial mixing can exceed
+        // that limit, so split the concentration update into stable substeps.
+        const mixBoost = 1 + 150 * this.mixing * this.mixing;
+        const D_eff = params.D * mixBoost;
+        const maxStableCoeff = 0.42;
+        const rawCoeff = D_eff * dt / (this.dy * this.dy);
+        const substeps = Math.max(1, Math.ceil(rawCoeff / maxStableCoeff));
+        const subDt = dt / substeps;
+        const coeff = D_eff * subDt / (this.dy * this.dy);
+        const maxPhysicalC = 0.65;
 
-        if (start < n) {
-          let total = 0;
-          let count = 0;
+        let current = new Float64Array(field);
+
+        for (let step = 0; step < substeps; step++) {
+          const next = new Float64Array(current);
+
           for (let i = start; i < n; i++) {
-            total += next[i];
-            count++;
+            const left = i - 1 <= this.interfaceIndex ? current[i] : current[i - 1];
+            const right = i === n - 1 ? current[i] : current[i + 1];
+            const updated = current[i] + coeff * (left - 2 * current[i] + right);
+            next[i] = Number.isFinite(updated) ? this.clamp(updated, 0, maxPhysicalC) : 0;
           }
-          const avg = count > 0 ? total / count : 0;
-          const homogenize = this.clamp(this.mixing * dt * 0.11, 0, 0.18);
-          for (let i = start; i < n; i++) {
-            next[i] = next[i] * (1 - homogenize) + avg * homogenize;
+
+          // Artificial bulk circulation: nudges the liquid region toward its own
+          // average concentration. This is applied per substep so aggressive max
+          // mixing remains smooth instead of causing one large numerical jump.
+          if (start < n) {
+            let total = 0;
+            let count = 0;
+            for (let i = start; i < n; i++) {
+              total += next[i];
+              count++;
+            }
+            const avg = count > 0 ? total / count : 0;
+            const homogenize = this.clamp(this.mixing * subDt * 0.25, 0, 0.22);
+            for (let i = start; i < n; i++) {
+              next[i] = next[i] * (1 - homogenize) + avg * homogenize;
+              next[i] = Number.isFinite(next[i]) ? this.clamp(next[i], 0, maxPhysicalC) : 0;
+            }
           }
+
+          for (let i = 0; i <= this.interfaceIndex; i++) {
+            next[i] = solid[i];
+          }
+
+          current = next;
         }
 
-        for (let i = 0; i <= this.interfaceIndex; i++) {
-          next[i] = solid[i];
-        }
-
-        if (type === "gas") this.C_gas = next;
-        else this.C_mineral = next;
+        if (type === "gas") this.C_gas = current;
+        else this.C_mineral = current;
       }
 
       updateBulkConcentrationMetric() {
