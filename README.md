@@ -19,25 +19,13 @@ Both widgets are single-file HTML applications. Each file contains its own HTML,
 
 ![Advanced model default state](screenshots/ice-sim-default.png)
 
-Suggested capture: `ice_sim.html` shortly after launch, showing the finite-difference field graph, the water column, the ice front, and the control panel.
+### Advanced model: clear ice, stable growth
 
-### Advanced model: stable planar growth
+![Advanced model stable growth](screenshots/ice-sim-clear.png)
 
-![Advanced model stable growth](screenshots/ice-sim-stable-growth.png)
-
-Suggested capture: higher mixing, moderate cooling, and relatively transparent stable growth.
-
-### Advanced model: constitutional undercooling
+### Advanced model: constitutional undercooling/strong initial transient
 
 ![Advanced model constitutional undercooling](screenshots/ice-sim-undercooling.png)
-
-Suggested capture: low mixing and higher solute concentration, showing the highlighted undercooled region, rough interface, and cloudier ice.
-
-### Advanced model: gas and mineral boundary layers
-
-![Advanced model concentration profiles](screenshots/ice-sim-concentration-profiles.png)
-
-Suggested capture: the right-side profile graph showing temperature, total concentration, gas/mineral component curves, and the solute-depressed freezing point.
 
 ### Lite model: default simulation
 
