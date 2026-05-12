@@ -801,20 +801,6 @@
         this.clipVessel(ctx);
         ctx.fillStyle = gradient;
         ctx.fillRect(b.ox, topY, b.w, liquidH);
-
-        ctx.globalAlpha = 0.14;
-        ctx.strokeStyle = "rgba(200, 245, 255, 0.45)";
-        ctx.lineWidth = 1;
-        for (let i = 0; i < 9; i++) {
-          const y = topY + 18 + i * 43 + Math.sin(performance.now() / 1100 + i) * 3;
-          ctx.beginPath();
-          for (let x = b.ox; x <= b.ox + b.w; x += 12) {
-            const wave = Math.sin(x / 28 + i * 0.75 + performance.now() / 1500) * 2.2;
-            if (x === b.ox) ctx.moveTo(x, y + wave);
-            else ctx.lineTo(x, y + wave);
-          }
-          ctx.stroke();
-        }
         ctx.restore();
       }
 
