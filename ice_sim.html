@@ -1119,7 +1119,7 @@
           const screenY = this.sy(i / (n - 1));
           const stop = this.clamp((screenY - v.y) / liquidH, 0, 1);
           const totalC = e.totalCAt(i);
-          const alpha = this.clamp((totalC / maxC) * 0.34, 0, 0.34);
+          const alpha = this.clamp((totalC / maxC) * 0.18, 0, 0.18);
           tint.addColorStop(stop, `rgba(245, 158, 11, ${alpha})`);
         }
 
