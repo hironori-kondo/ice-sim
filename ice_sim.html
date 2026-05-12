@@ -296,9 +296,9 @@
         <div class="control-row">
           <div class="label-line">
             <span>Water Circulation / Mixing</span>
-            <span id="mixingValue" class="value">35%</span>
+            <span id="mixingValue" class="value">75%</span>
           </div>
-          <input id="mixingSlider" type="range" min="0" max="100" step="1" value="35" />
+          <input id="mixingSlider" type="range" min="0" max="100" step="1" value="75" />
         </div>
         <p class="note">Higher mixing increases liquid diffusion and homogenizes the solute boundary layer, which tends to suppress constitutional undercooling.</p>
       </section>
@@ -405,7 +405,7 @@
 
         this.T_cool = options.T_cool ?? -18;
         this.T_ambient = options.T_ambient ?? 8;
-        this.mixing = options.mixing ?? 0.35;
+        this.mixing = options.mixing ?? 0.75;
         this.gasC0 = options.gasC0 ?? 0.012;
         this.mineralC0 = options.mineralC0 ?? 0.008;
         this.gasK = options.gasK ?? 0.010;
@@ -590,7 +590,7 @@
         // Explicit diffusion is only stable below a Courant-like limit:
         // D * dt / dy^2 <= about 0.5 in 1D. Strong artificial mixing can exceed
         // that limit, so split the concentration update into stable substeps.
-        const mixBoost = 1 + 150 * this.mixing * this.mixing;
+        const mixBoost = 1 + 80 * this.mixing * this.mixing;
         const D_eff = params.D * mixBoost;
         const maxStableCoeff = 0.42;
         const rawCoeff = D_eff * dt / (this.dy * this.dy);
@@ -1540,7 +1540,7 @@
       nodeCount: 160,
       T_cool: -18,
       T_ambient: 8,
-      mixing: 0.35,
+      mixing: 0.75,
       gasC0: 0.012,
       mineralC0: 0.008,
       gasK: 0.010,
