@@ -1259,16 +1259,37 @@
 
       drawUndercoolingZone(ctx) {
         const v = this.vessel;
-        const n = this.engine.nodeCount;
+        const e = this.engine;
+        const n = e.nodeCount;
         ctx.save();
         this.clipVessel(ctx);
-        for (let i = this.engine.interfaceIndex + 1; i < n; i++) {
-          if (this.engine.undercooled_grid[i] !== 1) continue;
-          const yTop = this.sy((i + 1) / (n - 1));
-          const yBot = this.sy(i / (n - 1));
-          ctx.fillStyle = "rgba(251, 113, 133, 0.22)";
-          ctx.fillRect(v.x, yTop, v.w, Math.max(1, yBot - yTop + 1));
+
+        // Group adjacent undercooled cells into continuous zones so the overlay
+        // does not expose individual grid-cell boundaries in the liquid.
+        let i = e.interfaceIndex + 1;
+        while (i < n) {
+          if (e.undercooled_grid[i] !== 1) {
+            i++;
+            continue;
+          }
+
+          const start = i;
+          let end = i;
+          while (end < n && e.undercooled_grid[end] === 1) end++;
+
+          const yTop = this.sy(end / (n - 1));
+          const yBottom = this.sy(start / (n - 1));
+          const zoneH = Math.max(1, yBottom - yTop);
+          const zone = ctx.createLinearGradient(0, yTop, 0, yBottom);
+          zone.addColorStop(0, "rgba(251, 113, 133, 0.08)");
+          zone.addColorStop(0.5, "rgba(251, 113, 133, 0.22)");
+          zone.addColorStop(1, "rgba(251, 113, 133, 0.08)");
+          ctx.fillStyle = zone;
+          ctx.fillRect(v.x, yTop, v.w, zoneH);
+
+          i = end;
         }
+
         ctx.restore();
       }
 
