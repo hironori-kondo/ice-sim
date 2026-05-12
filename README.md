@@ -1,532 +1,568 @@
-# Directional Solidification & Clear Ice Simulator
+# Directional Solidification & Clear Ice Simulators
 
-A self-contained, interactive browser widget that demonstrates the directional solidification process used to make clear ice. The simulator models a two-dimensional cross-section of water freezing upward from a cooled bottom plate, while dissolved gases and mineral impurities diffuse, accumulate near the freezing interface, and may become trapped in the growing ice.
+A pair of self-contained browser widgets for exploring directional solidification and the formation of clear ice.
 
-The entire application is contained in a single HTML file and runs locally in any modern browser. It uses no external dependencies, no build process, no server, and no package manager.
+The repository contains two simulations:
+
+| File | Name | Best for |
+| --- | --- | --- |
+| `ice_sim_lite.html` | Lite / Brownian model | Fast qualitative demonstrations of impurity rejection, particle diffusion, and cloudy ice formation. |
+| `ice_sim.html` | Advanced kinetics model | More physically motivated demonstrations of solute partitioning, freezing-point depression, constitutional undercooling, and morphology changes. |
+
+Both widgets are single-file HTML applications. Each file contains its own HTML, CSS, and vanilla JavaScript. There are no external dependencies, no build process, no package manager, and no server requirement.
 
 ---
 
 ## Screenshot Gallery
 
-### 1. Default simulation state
+### Advanced model: default interface and field graph
 
-![Default simulation state](screenshots/default-simulation.png)
+![Advanced model default state](screenshots/ice-sim-default.png)
 
-### 2. Clear ice formation with low solute concentration
+Suggested capture: `ice_sim.html` shortly after launch, showing the finite-difference field graph, the water column, the ice front, and the control panel.
 
-![Low-solute clear ice](screenshots/low-solute-clear-ice.png)
+### Advanced model: stable planar growth
 
-### 3. Cloudy ice from trapped impurities
+![Advanced model stable growth](screenshots/ice-sim-stable-growth.png)
 
-![Cloudy ice from trapped impurities](screenshots/cloudy-ice.png)
+Suggested capture: higher mixing, moderate cooling, and relatively transparent stable growth.
 
+### Advanced model: constitutional undercooling
+
+![Advanced model constitutional undercooling](screenshots/ice-sim-undercooling.png)
+
+Suggested capture: low mixing and higher solute concentration, showing the highlighted undercooled region, rough interface, and cloudier ice.
+
+### Advanced model: gas and mineral boundary layers
+
+![Advanced model concentration profiles](screenshots/ice-sim-concentration-profiles.png)
+
+Suggested capture: the right-side profile graph showing temperature, total concentration, gas/mineral component curves, and the solute-depressed freezing point.
+
+### Lite model: default simulation
+
+![Lite model default state](screenshots/ice-sim-lite-default.png)
+
+### Lite model: clear ice
+
+![Lite model clear ice](screenshots/ice-sim-lite-clear.png)
+
+### Lite model: cloudy ice
+
+![Lite model cloudy ice](screenshots/ice-sim-lite-cloudy.png)
 ---
 
 ## Project Overview
 
-This widget is designed as a teaching and exploration tool for clear ice formation. It visualizes the key idea behind directional freezing: when water freezes from one side, the solidification front can reject impurities into the remaining liquid. If the freezing proceeds in a controlled direction, dissolved gases and minerals are pushed ahead of the advancing ice rather than being uniformly trapped throughout it. This is one reason directional freezing can produce clearer ice than freezing a container from all sides at once.
+These widgets are designed as educational simulations of directional freezing. In directional solidification, ice grows from one side of a water volume, often from a cooled bottom plate. As the solid-liquid interface advances, dissolved gases and mineral impurities tend to be rejected into the remaining liquid rather than uniformly incorporated into the solid. Under favorable conditions, this rejection can produce clear ice. Under unfavorable conditions, solute pile-up, bubble formation, or morphological instability can trap impurities and produce cloudy ice.
 
-The simulator focuses on three coupled ideas:
+The two simulators share the same broad concept but use different levels of physical detail.
 
-1. A one-dimensional vertical thermal gradient.
-2. A horizontal solid-liquid interface that advances upward from the bottom.
-3. Discrete impurity particles that diffuse, pile up near the interface, and may become trapped if local concentration becomes too high.
+`ice_sim_lite.html` is intentionally simple and visual. It treats impurities as Brownian particles moving in a liquid background while a freezing front pushes or traps them.
 
-The model is intentionally lightweight so that it can run smoothly in a browser using the HTML5 Canvas API.
+`ice_sim.html` is the more physical companion model. It solves one-dimensional finite-difference temperature and concentration fields, handles two simultaneous solute species, computes freezing-point depression, and detects constitutional undercooling ahead of the interface.
 
 ---
 
-## Features
+## Quick Start
 
-### Single-file deployment
+1. Download or clone the repository.
+2. Open either simulator directly in a modern browser:
+   - `ice_sim.html`
+   - `ice_sim_lite.html`
+3. No server is required. Double-clicking the file is enough in most browsers.
 
-- One `index.html` file contains all HTML, CSS, and JavaScript.
-- No external CSS links.
-- No `<script src="...">` tags.
-- No third-party JavaScript libraries.
-- No server required.
-- Runs by opening the HTML file directly in a browser.
+Recommended starting point:
 
-### Interactive physics controls
+- Use `ice_sim_lite.html` first to build intuition.
+- Use `ice_sim.html` next to explore the more physical model and field profiles.
 
-The sidebar exposes live controls for:
+---
 
-- Play and pause.
+## Repository Structure
+
+```text
+.
+├── ice_sim.html          # Advanced kinetics simulator
+├── ice_sim_lite.html     # Lite Brownian particle simulator
+├── README.md             # Project documentation
+├── LICENSE               # MIT License
+└── screenshots/          # Screenshots for this README
+```
+
+Both simulator files are standalone. You can copy either HTML file by itself to another folder or computer and it will still run.
+
+---
+
+## Shared Features
+
+Both widgets include:
+
+- A single-file HTML/CSS/JavaScript implementation.
+- Vanilla JavaScript only.
+- HTML5 Canvas rendering.
+- A sidebar control panel.
+- A main simulation canvas.
+- A bottom-up freezing geometry.
+- Visual distinction between liquid water and solid ice.
+- Gas and mineral impurity visualization.
+- Play/pause and reset controls.
+- Adjustable thermal settings.
+- Adjustable solute settings.
+- Fixed-step simulation timing so playback speed does not directly change the numerical timestep.
+- An MVC-like organization inside a single file:
+  - model / physics engine,
+  - view / canvas renderer,
+  - controller / UI bindings and animation loop.
+
+---
+
+# `ice_sim.html`: Advanced Kinetics Model
+
+`ice_sim.html` is the main, more physically motivated simulation. It is intended for exploring how solute rejection, freezing-point depression, mixing, and constitutional undercooling affect whether ice grows with a stable planar interface or a rough cellular/dendritic interface.
+
+## Advanced Model Features
+
+The advanced model includes:
+
+- A one-dimensional finite-difference grid along the vertical axis.
+- A temperature field `T_grid`.
+- Independent liquid concentration fields for gases and minerals:
+  - `C_gas`
+  - `C_mineral`
+- Independent solid concentration fields:
+  - `C_solid_gas`
+  - `C_solid_mineral`
+- A phase-state grid:
+  - `0 = liquid`
+  - `1 = solid`
+- A cloudiness grid that records whether each frozen layer formed stably or unstably.
+- A constitutional-undercooling check ahead of the interface.
+- A smooth planar front when the interface is stable.
+- A jagged rough front when the interface is unstable.
+- A right-side graph showing:
+  - temperature `T(y)`,
+  - total concentration `C_total(y)`,
+  - gas and mineral component curves,
+  - solute-depressed freezing point `T_f(y)`,
+  - the interface location.
+- Animated particle and tracer overlays that follow the solute boundary layer.
+- Faint solid-inclusion markers for incorporated solid solute.
+- Brighter trapped inclusions and cloudiness during unstable growth.
+
+## Advanced Model Controls
+
+### Global
+
+- **Play/Pause**: stops or resumes the simulation.
+- **Reset**: restarts the fields and particles with the current slider settings.
+- **Time Scale**: speeds up or slows down simulated time using fixed physics substeps.
+
+### Thermodynamics
+
+- **Bottom Cooling Temp**: sets the temperature of the cooling plate.
+- **Ambient Air Temp**: sets the temperature at the top boundary.
+
+### Kinetics
+
+- **Water Circulation / Mixing**: controls artificial mixing in the liquid. Higher mixing washes away the solute boundary layer and tends to suppress constitutional undercooling.
+
+### Gas Solute
+
+- **Initial Gas Concentration**: sets the initial dissolved gas concentration.
+- **Gas Partition Coefficient `k`**: controls how readily gas enters the solid. Lower values mean stronger rejection.
+
+### Mineral Solute
+
+- **Initial Mineral Concentration**: sets the initial dissolved mineral concentration.
+- **Mineral Partition Coefficient `k`**: controls how readily mineral solute enters the solid.
+
+## Advanced Model Physics
+
+### Domain and grid
+
+The simulation uses a vertical one-dimensional grid from the cooling plate to the water surface.
+
+```text
+y = 0   bottom cooling plate
+y = H   water surface / ambient boundary
+```
+
+The current implementation uses at least 100 vertical nodes; the working model uses 160 nodes by default.
+
+Each grid cell stores temperature, liquid solute concentration, solid solute concentration, and phase state.
+
+### Temperature field
+
+The advanced model evolves temperature using an explicit finite-difference update. The bottom boundary is coupled to the cooling plate, while the top boundary is coupled to the ambient air. As the ice grows thicker, heat extraction through the bottom is reduced by a simple thermal-resistance term so that growth slows as the ice layer thickens.
+
+Ice and water use different effective thermal diffusivities. This produces a meaningful slope change at the solid-liquid interface without forcing the temperature curve into two artificial disconnected segments.
+
+The active interface is gently nudged toward its local liquidus temperature as a lightweight Stefan-like approximation, while older solid ice is allowed to cool by conduction.
+
+### Concentration fields
+
+Gases and minerals are tracked as independent one-dimensional concentration fields in the liquid:
+
+```text
+C_gas(y)
+C_mineral(y)
+```
+
+In the liquid, both fields evolve by explicit Fickian diffusion:
+
+```text
+dC/dt = D * d²C/dy²
+```
+
+The mixing slider increases the effective diffusion and applies mild homogenization in the liquid region. This is not a full fluid-flow solver; it is a compact way to represent circulation washing solute away from the interface.
+
+### Partitioning at the interface
+
+When a liquid cell freezes, each solute species partitions independently:
+
+```text
+C_S,gas     = k_gas     * C_L,gas
+C_S,mineral = k_mineral * C_L,mineral
+```
+
+The rejected remainder is deposited into the nearby liquid cells ahead of the interface, creating a solute-enriched boundary layer.
+
+Lower `k` means stronger rejection into the liquid. Higher `k` means more solute enters the ice.
+
+### Freezing-point depression
+
+The local freezing point is depressed by the total solute content:
+
+```text
+T_f = -(m_gas * C_gas) - (m_mineral * C_mineral)
+```
+
+Here `m_gas` and `m_mineral` are simplified liquidus-slope parameters. They are chosen for qualitative behavior rather than calibrated quantitative prediction.
+
+The interface can advance into the next liquid grid cell only when that cell is colder than its local solute-depressed freezing point.
+
+### Constitutional undercooling
+
+The model checks the liquid cells just ahead of the interface. If a real solute-enriched boundary layer has formed and the local liquid temperature lies below the local liquidus, the region is marked as constitutionally undercooled.
+
+When constitutional undercooling is detected:
+
+- the interface is rendered as rough and jagged,
+- rejection efficiency drops,
+- more particles are trapped,
+- the ice layer formed during that period becomes cloudier and more opaque.
+
+If no constitutional undercooling is detected:
+
+- the interface remains planar,
+- particles are mostly pushed forward,
+- ice behind the front remains mostly transparent.
+
+### Particle and inclusion rendering
+
+The advanced model uses particles primarily as a visual representation of solute behavior.
+
+There are three related visual categories:
+
+1. **Liquid particles**: mobile gas and mineral particles in the melt.
+2. **Boundary-layer tracer dots**: animated, field-sampled dots that make the concentration spike near the interface easier to see.
+3. **Solid inclusions**: faint markers for incorporated solid solute, plus brighter trapped inclusions produced during unstable growth.
+
+This distinction matters because nonzero solid concentration does not always mean a large visible bubble or mineral speck. Stable growth may incorporate a small continuum-level amount of solute while still appearing visually clear.
+
+---
+
+# `ice_sim_lite.html`: Lite Brownian Model
+
+`ice_sim_lite.html` is the simpler, faster model. It is designed for intuition and demonstration rather than for detailed interface kinetics.
+
+## Lite Model Features
+
+The lite model includes:
+
+- A two-dimensional particle view of the water column.
+- A one-dimensional linear thermal gradient.
+- A horizontal freezing front that advances upward.
+- Gas particles rendered as pale circular bubbles.
+- Mineral particles rendered as orange square or dot-like inclusions.
+- Brownian motion in the liquid.
+- Interface rejection and trapping logic.
+- A clarity metric based on trapped-particle density.
+- A temperature bar and front/isotherm annotations.
+
+## Lite Model Controls
+
+The lite model includes controls for:
+
+- Play/pause.
 - Reset.
-- Playback rate from 1x to 100x.
+- Playback rate.
 - Bottom plate temperature.
 - Ambient air temperature.
-- Initial dissolved gas particle count.
-- Initial dissolved mineral particle count.
+- Initial gas particle count.
+- Initial mineral particle count.
 
-Temperature sliders update the thermal model in real time. Concentration sliders trigger a soft reset of the particle population while preserving the current thermal and playback settings.
+Concentration sliders reset the particle population while preserving the current thermal and playback settings.
 
-### Visual simulation output
-
-The canvas renders:
-
-- Liquid water as a semi-transparent blue gradient.
-- Solid ice as a crystalline pale-blue/white region growing from the bottom.
-- A white horizontal freezing front.
-- A dashed target 0 deg C isotherm.
-- A vertical temperature color bar.
-- Gas particles as small pale circular bubbles.
-- Mineral particles as orange square particles.
-- Cloudiness in the solid ice based on trapped impurity density.
-
-### Live metrics
-
-The widget reports:
-
-- Ice front height as a percentage of the domain.
-- Target isotherm height as a percentage of the domain.
-- Estimated clarity percentage.
-- Number of trapped particles.
-- Number of particles still in liquid.
-- Simulated elapsed time.
-
----
-
-## Underlying Physics Model
-
-The simulator is not a full computational fluid dynamics or phase-field model. It is a compact educational model designed to preserve the main qualitative behaviors of directional solidification while remaining fast enough for real-time browser interaction.
-
-### Coordinate system
-
-The simulation domain is a two-dimensional rectangle.
-
-- `y = 0` represents the bottom cooling plate.
-- `y = H` represents the top water surface exposed to ambient air.
-- The left and right walls are treated as perfectly insulated.
-- Because the side walls are insulated, temperature is modeled as a function of vertical position only.
-
-Particles move in both x and y, but the temperature field depends only on y.
+## Lite Model Physics
 
 ### Linear thermal gradient
 
-The temperature field is assumed to be perfectly linear between the bottom plate and the top surface:
+The lite model assumes a strictly one-dimensional, perfectly linear temperature field:
 
 ```text
 T(y) = T_cool + (y / H) * (T_ambient - T_cool)
 ```
 
-where:
+The sides are treated as insulated, so temperature depends only on height.
 
-- `T(y)` is the temperature at height `y`.
-- `T_cool` is the bottom plate temperature.
-- `T_ambient` is the top ambient temperature.
-- `H` is the total domain height.
+### Freezing front
 
-This is a simplified steady-state approximation. It intentionally avoids solving the transient heat equation so that the model remains simple, deterministic in structure, and easy to inspect.
-
-### Freezing front and target isotherm
-
-The phase boundary is associated with the location where the linear temperature field crosses the freezing temperature:
+The nominal front target is the height where the linear temperature field reaches the freezing point:
 
 ```text
-T(y) = T_freeze
+T(y) = 0 deg C
 ```
 
-The widget uses `T_freeze = 0 deg C`. Solving the linear gradient for the target front height gives:
+Solving for the target height gives:
 
 ```text
-y_target = H * (T_freeze - T_cool) / (T_ambient - T_cool)
+y_target = H * (0 - T_cool) / (T_ambient - T_cool)
 ```
 
-with clamping at the bottom and top of the domain.
+The front advances toward this target at a finite rate determined by the cooling settings.
 
-The rendered freezing front does not teleport immediately to `y_target`. Instead, the simulated front advances toward that target at a finite rate determined by the thermal settings. This creates visible solidification dynamics while preserving the role of the thermodynamic variables.
+### Brownian particle motion
 
-### Front velocity
-
-The implementation computes a maximum front advancement rate from approximate cooling and gradient-strength terms:
-
-```text
-coolingStrength = clamp((T_freeze - T_cool) / 40, 0, 1)
-gradientStrength = clamp((T_ambient - T_cool) / 65, 0.08, 1.25)
-maxRate = baseRate * (0.35 + 1.8 * coolingStrength) * gradientStrength
-```
-
-The front advances toward the target isotherm by no more than `maxRate * dt` in each fixed physics step.
-
-This means the physical freezing behavior depends on the temperature controls, not on the playback-rate slider.
-
-### Fixed-step integration and playback rate
-
-The simulation uses fixed-step time integration:
-
-```text
-FIXED_PHYSICS_DT = 1 / 60 seconds
-```
-
-The playback-rate slider changes how many fixed-size physics steps are executed per real wall-clock second. It does not increase the size of the physics timestep.
-
-This distinction is important. Earlier versions of the widget used the speed slider as a direct multiplier on `dt`, which could alter Brownian motion, local solute pile-up, and trapping statistics. The current version avoids that by keeping the physics step fixed and only changing how quickly simulated time advances relative to real time.
-
-If the browser cannot keep up, the widget drops excess accumulated backlog rather than increasing `dt`. This preserves the physics model and merely slows apparent playback under load.
-
-### Solute particles
-
-Water molecules are treated as a continuous background. Only impurities are represented as discrete particles.
-
-The model includes two particle species:
-
-#### Dissolved gases
-
-- Rendered as pale circular particles.
-- High tendency to form bubbles or cloudy inclusions.
-- Very low partition coefficient.
-- Higher Brownian diffusivity.
-- Larger rejection distance when pushed ahead of the interface.
-
-Current model parameters:
-
-```text
-D_liquid = 62
-D_solid = 0
-k = 0.035
-```
-
-#### Dissolved minerals
-
-- Rendered as orange square particles.
-- Moderate partition coefficient.
-- Lower Brownian diffusivity than gas particles.
-- More likely than gases to be incorporated into the solid phase.
-
-Current model parameters:
-
-```text
-D_liquid = 21
-D_solid = 0
-k = 0.22
-```
-
-These constants are illustrative, not calibrated to a specific real-world water chemistry.
-
-### Brownian motion in liquid water
-
-Particles in the liquid phase undergo a random walk. For each fixed physics step, the Brownian displacement scale is:
+Particles in the liquid undergo random walk motion:
 
 ```text
 sigma = sqrt(2 * D_liquid * dt)
 ```
 
-The simulator samples normally distributed random displacements in x and y. Particles reflect off the side boundaries and remain within the liquid domain unless trapped.
+The particle displacement is sampled from a normal distribution in both horizontal and vertical directions.
 
-### Interface rejection
+### Interface rejection and trapping
 
-When the solidification front overtakes an untrapped particle, the particle encounters the solid-liquid interface. The model then decides whether the particle becomes trapped in the growing solid or is rejected upward into the liquid.
+When the interface overtakes a particle, the model decides whether the particle is rejected forward into the liquid or trapped in the solid.
 
-The interface logic is based on three ideas:
+The trapping probability depends on:
 
-1. The species partition coefficient `k`.
-2. Local particle concentration near the interface.
-3. How deeply the advancing interface has overtaken the particle.
+- particle species,
+- partition coefficient,
+- local particle pile-up near the interface,
+- how far the front has overtaken the particle.
 
-A low partition coefficient means the species prefers to remain in the liquid rather than enter the solid. Therefore, gas particles with low `k` are usually pushed forward unless local concentration becomes high enough to encourage trapping or bubble formation.
-
-### Local solubility and pile-up
-
-The model estimates local concentration in a small region just ahead of the freezing front. If that concentration exceeds a threshold, the region is treated as locally saturated.
-
-The saturation estimate increases trapping probability. This creates the characteristic behavior of directional freezing:
-
-- At low concentrations, most impurities are rejected upward and the ice remains clear.
-- At high concentrations, particles pile up ahead of the interface.
-- If the pile-up becomes too dense, particles are trapped and cloudy ice forms.
-
-### Trapped particles and solid phase behavior
-
-Once trapped, a particle is locked in place:
-
-```text
-D_solid = 0
-velocity = 0
-```
-
-Trapped particles remain embedded in the solid ice region for the rest of the simulation. The renderer uses their positions to generate local cloudiness.
+Gas particles have a stronger tendency to be rejected, but dense gas pile-up can produce cloudy bubble-rich ice. Mineral particles have a higher chance of incorporation.
 
 ### Clarity metric
 
-The clarity metric is a heuristic estimate based on the density of trapped particles in the ice. Gas particles are weighted more heavily than minerals because bubbles tend to scatter light strongly.
-
-The current implementation computes a weighted trapped-particle density and maps it to clarity approximately as:
+The lite model estimates clarity from trapped particle density. This is a heuristic visual metric rather than an optical scattering calculation.
 
 ```text
-clarity = 1 / (1 + 1.75 * weightedDensity)
+clarity = 1 / (1 + weighted trapped-particle density)
 ```
 
-This is a visual and pedagogical metric rather than a physically calibrated optical scattering calculation.
+Gas particles are weighted more strongly because bubbles scatter light efficiently.
+
+---
+
+## Comparing the Two Models
+
+| Topic | `ice_sim_lite.html` | `ice_sim.html` |
+| --- | --- | --- |
+| Goal | Simple, intuitive particle demo | More physical kinetics demo |
+| Temperature | Linear prescribed profile | Finite-difference thermal field |
+| Solute | Discrete particles only | Continuous fields plus particles |
+| Solute species | Gas and mineral particles | Gas and mineral fields plus particles |
+| Freezing point | Fixed at 0 deg C | Depressed by solute concentration |
+| Interface motion | Advances toward target isotherm | Advances when the next cell is below local liquidus |
+| Instability | Heuristic trapping/cloudiness | Constitutional-undercooling check |
+| Mixing | Not explicitly modeled | Adjustable liquid mixing/circulation |
+| Best use | Introductory explanation | Advanced demonstration and parameter exploration |
+
+A useful teaching sequence is to start with the lite model to explain impurity rejection, then move to the advanced model to show why growth morphology can change when the solute boundary layer becomes constitutionally undercooled.
+
+---
+
+## Suggested Experiments
+
+### 1. Clear ice in the lite model
+
+Open `ice_sim_lite.html`.
+
+- Set gas and mineral concentrations low.
+- Use a moderately cold bottom plate.
+- Watch the front push most particles upward.
+- Observe the high clarity metric.
+
+### 2. Cloudy ice in the lite model
+
+Open `ice_sim_lite.html`.
+
+- Increase gas concentration.
+- Increase mineral concentration.
+- Watch local pile-up near the front.
+- Observe more trapped particles and lower clarity.
+
+### 3. Stable growth in the advanced model
+
+Open `ice_sim.html`.
+
+- Use moderate solute concentrations.
+- Increase water circulation / mixing.
+- Use a moderate bottom cooling temperature.
+- Observe a smoother planar interface and relatively clear ice.
+
+### 4. Constitutional undercooling in the advanced model
+
+Open `ice_sim.html`.
+
+- Decrease mixing.
+- Increase gas and/or mineral concentration.
+- Use colder bottom cooling.
+- Watch the boundary-layer concentration spike grow.
+- Observe the undercooled region, rough front, and cloudier ice.
+
+### 5. Partition coefficient comparison
+
+Open `ice_sim.html`.
+
+- Lower `k_gas` and observe stronger gas rejection into the liquid.
+- Raise `k_gas` and observe more gas incorporation into the solid.
+- Repeat with `k_mineral`.
+
+### 6. Playback-rate invariance
+
+Run either widget at different time-scale settings.
+
+The exact particles will differ because of random sampling, but the qualitative physics should be similar at the same simulated time. The playback slider changes how quickly fixed physics steps are executed; it should not directly change the integration timestep.
 
 ---
 
 ## Architecture
 
-The widget follows a Model-View-Controller organization inside a single file.
+Both widgets follow the same high-level organization inside a single HTML file.
 
-### Model: `PhysicsEngine`
+### Model
 
-The `PhysicsEngine` class owns all simulation state and physics behavior.
+The model owns simulation state and physics updates.
 
-Responsibilities include:
+In the lite model, this is primarily particle arrays, a linear thermal gradient, a moving front, and trapping logic.
 
-- Domain dimensions.
-- Temperature parameters.
-- Particle arrays.
-- Particle creation and reset behavior.
-- Temperature interpolation.
-- Target isotherm calculation.
-- Freezing-front advancement.
-- Brownian motion.
-- Interface rejection and trapping.
-- Clarity and state metrics.
+In the advanced model, this includes finite-difference field arrays, phase state, interface kinetics, concentration partitioning, undercooling detection, particles, and solid inclusions.
 
-The model does not call the DOM or Canvas APIs.
+### View
 
-### View: `CanvasView`
+The view owns canvas drawing only. It reads from the model and renders:
 
-The `CanvasView` class reads state from the model and renders it to the canvas.
+- water,
+- ice,
+- particles,
+- interface shape,
+- cloudiness,
+- graphs and annotations.
 
-Responsibilities include:
+The view should not modify physics state.
 
-- Canvas sizing and high-DPI scaling.
-- Coordinate transforms from simulation coordinates to screen coordinates.
-- Drawing the vessel.
-- Drawing liquid water.
-- Drawing solid ice.
-- Drawing trapped-particle cloudiness.
-- Drawing solute particles.
-- Drawing front and target-isotherm annotations.
-- Drawing the temperature bar.
+### Controller
 
-The view should not change physics state.
+The controller owns DOM interaction and animation timing:
 
-### Controller: DOM bindings and animation loop
-
-The controller connects user inputs to the model and coordinates the animation loop.
-
-Responsibilities include:
-
-- Reading slider and button input.
-- Updating model parameters.
-- Performing hard and soft resets.
-- Maintaining fixed-step simulation timing.
-- Calling model updates.
-- Calling the view draw method.
-- Updating text labels and live metrics.
-
----
-
-## How to Use
-
-### Run locally
-
-1. Save the simulator file as `clear_ice.html` or `index.html`.
-2. Open the file in a modern browser such as Chrome, Firefox, Safari, or Edge.
-3. No server is required.
-
-### Basic interaction
-
-1. Press **Play/Pause** to stop or resume the simulation.
-2. Use **Playback Rate** to run the simulation faster or slower without changing the underlying physics timestep.
-3. Use **Reset** to restart the simulation with the current slider settings.
-4. Lower the **Bottom Plate Temp** to drive stronger freezing from the bottom.
-5. Raise or lower **Ambient Air Temp** to change the vertical thermal gradient and the target 0 deg C isotherm.
-6. Adjust **Dissolved Gases** and **Dissolved Minerals** to compare clean and contaminated water.
-
-### Suggested experiments
-
-#### Experiment 1: Low-solute clear ice
-
-- Set dissolved gases low.
-- Set minerals low.
-- Use a moderately cold bottom plate.
-- Observe that the growing ice remains mostly transparent and the clarity metric stays high.
-
-#### Experiment 2: High gas concentration
-
-- Increase dissolved gases.
-- Keep minerals moderate.
-- Observe stronger pile-up near the front and more cloudy inclusions once local saturation is reached.
-
-#### Experiment 3: Mineral-rich water
-
-- Increase dissolved minerals.
-- Keep gas concentration low or moderate.
-- Observe a different trapped-particle pattern, with mineral particles appearing as high-contrast square inclusions.
-
-#### Experiment 4: Thermal gradient sensitivity
-
-- Move the bottom temperature toward 0 deg C.
-- Then move it colder, toward -40 deg C.
-- Watch the target isotherm and front advancement change.
-
-#### Experiment 5: Playback-rate invariance
-
-- Run the same settings at 1x and 100x.
-- Compare the simulation at similar simulated times.
-- The exact particle positions will differ because of random sampling, but the physics rules and statistical behavior should remain consistent.
-
----
-
-## File Structure
-
-The simulator is intentionally contained in a single file:
-
-```text
-clear_ice.html
-```
-
-Internal organization:
-
-```text
-<head>
-  <style>
-    CSS layout and visual styling
-  </style>
-</head>
-<body>
-  HTML controls and canvas
-  <script>
-    PhysicsEngine model
-    CanvasView renderer
-    Controller bindings and animation loop
-  </script>
-</body>
-```
+- slider and button event listeners,
+- label and metric updates,
+- reset behavior,
+- fixed-step simulation accumulator,
+- `requestAnimationFrame` loop.
 
 ---
 
 ## Customization Guide
 
-### Change initial defaults
+### Change default settings
 
-Look for the `new PhysicsEngine(...)` call near the bottom of the script:
+In both files, look near the bottom of the script for the `new PhysicsEngine(...)` call. This is where the initial temperatures, concentrations, particle counts, and model-specific parameters are set.
 
-```javascript
-const engine = new PhysicsEngine({
-  width: 420,
-  height: 620,
-  T_cool: -18,
-  T_ambient: 12,
-  initialGasCount: 240,
-  initialMineralCount: 140
-});
-```
+### Change solute behavior in `ice_sim.html`
 
-You can adjust the default temperatures, domain size, and initial particle counts here.
+The advanced model defines species behavior in `speciesParams(type)`. This is where gas and mineral parameters such as partition coefficient, liquidus slope, diffusion coefficient, particle diffusivity, particle size, and cloudiness contribution are defined.
 
-### Change particle species behavior
+### Change particle behavior in `ice_sim_lite.html`
 
-Particle parameters are defined in `speciesProps(type)`:
+The lite model defines particle properties in its species-property function. This is where diffusion coefficients, partition behavior, size, and rejection distance can be adjusted.
 
-```javascript
-speciesProps(type) {
-  if (type === "gas") {
-    return {
-      D_liquid: 62,
-      D_solid: 0,
-      k: 0.035,
-      radius: 2.4,
-      pushDistance: 7.5
-    };
-  }
+### Change numerical timing
 
-  return {
-    D_liquid: 21,
-    D_solid: 0,
-    k: 0.22,
-    radius: 2.15,
-    pushDistance: 5.2
-  };
-}
-```
-
-Increasing `D_liquid` makes a species diffuse more rapidly. Increasing `k` makes a species more likely to enter the solid. Increasing `pushDistance` makes rejected particles move farther ahead of the front.
-
-### Change local saturation behavior
-
-The key saturation parameters are initialized in the `PhysicsEngine` constructor:
-
-```javascript
-this.rejectionBand = 30;
-this.localRadius = 28;
-this.solubilityThreshold = 0.0026;
-```
-
-Lowering `solubilityThreshold` makes trapping occur more easily. Increasing `rejectionBand` or `localRadius` changes the size of the region used to estimate local pile-up.
-
-### Change playback behavior
-
-The fixed-step settings are defined in the controller:
-
-```javascript
-const FIXED_PHYSICS_DT = 1 / 60;
-const MAX_PHYSICS_STEPS_PER_FRAME = 240;
-```
-
-A smaller fixed timestep can improve numerical smoothness at the cost of more computation. A larger maximum step count allows higher playback rates but may reduce responsiveness on slower devices.
-
----
-
-## Educational Notes
-
-This simulation is most useful for explaining qualitative mechanisms:
-
-- Why directional freezing can produce clear ice.
-- Why impurities accumulate at a moving solid-liquid interface.
-- Why trapped bubbles and minerals make ice cloudy.
-- Why freezing from all directions tends to trap impurities more uniformly.
-- Why cooling rate and thermal gradients matter.
-
-The widget deliberately favors interpretability and responsiveness over full physical detail.
-
----
-
-## Limitations
-
-This is a simplified model. It does not include:
-
-- Full transient heat conduction.
-- Latent heat release.
-- Convective flow in the liquid.
-- Density changes between water and ice.
-- Nucleation physics.
-- Crystal orientation and grain boundary dynamics.
-- Real solubility curves for gases or salts.
-- Pressure-dependent gas bubble formation.
-- Optical scattering from first principles.
-- Three-dimensional particle motion.
-
-The model should not be used to predict exact freezing times, impurity concentrations, or optical clarity for a real ice-making process without further calibration.
+Both widgets use fixed-step timing. The relevant constants are near the bottom of each script. Increasing maximum steps per frame allows higher time scales but can increase CPU load. Increasing the fixed timestep may improve speed but can reduce numerical smoothness.
 
 ---
 
 ## Browser Compatibility
 
-The widget uses standard web APIs:
+The widgets use standard browser APIs:
 
-- HTML5 Canvas.
-- CSS Flexbox.
-- JavaScript ES6 classes.
-- `requestAnimationFrame`.
-- Standard range inputs and buttons.
+- HTML5 Canvas,
+- CSS Flexbox,
+- JavaScript ES6 classes,
+- `requestAnimationFrame`,
+- standard range inputs and buttons.
 
-It should run on current versions of:
+They should run in current versions of:
 
-- Chrome.
-- Firefox.
-- Safari.
+- Chrome,
+- Firefox,
+- Safari,
 - Edge.
+
+No internet connection is required once the files are saved locally.
 
 ---
 
 ## Performance Notes
 
-Performance is primarily affected by particle count and playback rate. The renderer is lightweight, but very high concentrations combined with high playback rates can increase CPU usage because the model must execute many fixed physics steps per rendered frame.
+Performance depends primarily on:
 
-The application includes a safety cap on the number of fixed physics steps per animation frame. If the browser falls behind, excess backlog is dropped. This prevents a stalled tab from causing a large unstable physics timestep.
+- particle count,
+- grid size in the advanced model,
+- time-scale setting,
+- display resolution,
+- browser and device speed.
+
+Both widgets cap the number of fixed physics steps that can run in one animation frame. If the browser cannot keep up, excess accumulated simulation backlog is dropped rather than converted into a larger timestep. This keeps the numerical model stable and merely slows apparent playback under heavy load.
+
+---
+
+## Educational Notes
+
+These simulations are intended for qualitative learning, demonstration, and exploration. They can help explain:
+
+- why freezing direction affects ice clarity,
+- why impurities accumulate ahead of a solidification front,
+- why slow, directional growth can reject solute more effectively,
+- why high solute concentration can lead to cloudy inclusions,
+- why mixing can reduce boundary-layer build-up,
+- how solute depresses the freezing point,
+- how constitutional undercooling can destabilize a planar interface.
+
+---
+
+## Limitations
+
+The widgets are simplified educational models. They do not include:
+
+- full Navier-Stokes fluid flow,
+- buoyancy-driven convection,
+- full Stefan-problem energy conservation,
+- calibrated heat-transfer coefficients,
+- pressure-dependent gas bubble nucleation,
+- realistic multicomponent water chemistry,
+- crystal orientation and grain-boundary dynamics,
+- three-dimensional flow or particle motion,
+- optical scattering from first principles,
+- quantitative prediction of real freezing times or clarity.
+
+The advanced model is more physical than the lite model, but it is still a compact browser simulation, not a validated computational materials-science solver.
 
 ---
 
@@ -534,8 +570,28 @@ The application includes a safety cap on the number of fixed physics steps per a
 
 This project is licensed under the MIT License.
 
+Copyright (c) 2026 [Your Name or Organization]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 ---
 
-## Credits
+## Credit
 
-The code (and most of the README) herein was generated by ChatGPT 5.5 Thinking, based on a design doc created by Gemini 3.1 Pro. 
+The code (and most of the README) herein was generated by ChatGPT 5.5 Thinking, based on a design doc created by Gemini 3.1 Pro. Minor edits were made manually.
