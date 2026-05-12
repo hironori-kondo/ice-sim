@@ -29,15 +29,15 @@ Both widgets are single-file HTML applications. Each file contains its own HTML,
 
 ### Lite model: default simulation
 
-![Lite model default state](screenshots/ice-sim-lite-default.png)
+![Lite model default state](screenshots/ice-sim-lite-default-2.png)
 
 ### Lite model: clear ice
 
-![Lite model clear ice](screenshots/ice-sim-lite-clear.png)
+![Lite model clear ice](screenshots/ice-sim-lite-clear-2.png)
 
 ### Lite model: cloudy ice
 
-![Lite model cloudy ice](screenshots/ice-sim-lite-cloudy.png)
+![Lite model cloudy ice](screenshots/ice-sim-lite-cloudy-2.png)
 ---
 
 ## Project Overview
