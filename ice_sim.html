@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Directional Solidification & Clear Ice Simulator</title>
+  <style>
+    :root {
+      --bg: #08111f;
+      --panel: #101b2d;
+      --panel-2: #15243b;
+      --text: #eaf5ff;
+      --muted: #a9bed0;
+      --accent: #7dd3fc;
+      --accent-2: #38bdf8;
+      --line: rgba(255, 255, 255, 0.12);
+      --danger: #fca5a5;
+      --good: #a7f3d0;
+      --warning: #fde68a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top left, #10233e 0%, var(--bg) 38%, #050912 100%);
+    }
+
+    body {
+      display: flex;
+    }
+
+    .app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      min-width: 900px;
+    }
+
+    .controls {
+      width: 340px;
+      min-width: 320px;
+      height: 100%;
+      padding: 22px;
+      background: linear-gradient(180deg, rgba(16, 27, 45, 0.96), rgba(10, 18, 32, 0.96));
+      border-right: 1px solid var(--line);
+      overflow-y: auto;
+      box-shadow: 18px 0 50px rgba(0, 0, 0, 0.25);
+    }
+
+    .controls h1 {
+      margin: 0 0 8px;
+      font-size: 21px;
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .section {
+      margin: 18px 0;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .section h2 {
+      margin: 0 0 12px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #d8ecff;
+      text-transform: uppercase;
+    }
+
+    .control-row {
+      margin: 12px 0 15px;
+    }
+
+    .label-line {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .label-line span:first-child {
+      color: #dbeafe;
+      font-weight: 650;
+    }
+
+    .value {
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent-2);
+      cursor: pointer;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      border: 1px solid rgba(125, 211, 252, 0.26);
+      border-radius: 13px;
+      padding: 11px 12px;
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.23), rgba(14, 116, 144, 0.18));
+      font-size: 13px;
+      font-weight: 750;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(125, 211, 252, 0.62);
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.32), rgba(14, 116, 144, 0.26));
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .reset {
+      border-color: rgba(252, 165, 165, 0.28);
+      background: linear-gradient(180deg, rgba(252, 165, 165, 0.16), rgba(127, 29, 29, 0.16));
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(3, 7, 18, 0.32);
+    }
+
+    .metric .name {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .metric .number {
+      margin-top: 5px;
+      color: #f8fbff;
+      font-size: 18px;
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .legend {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .swatch {
+      width: 13px;
+      height: 13px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+    }
+
+    .swatch.gas { background: #f8fafc; }
+    .swatch.mineral { background: #f59e0b; border-radius: 3px; }
+    .swatch.ice { background: rgba(200, 235, 255, 0.68); }
+    .swatch.cloud { background: rgba(245, 245, 245, 0.88); }
+
+    .stage {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      max-width: 300px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(5, 10, 19, 0.58);
+      backdrop-filter: blur(10px);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+      pointer-events: none;
+    }
+
+    .overlay strong {
+      color: #e0f2fe;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 950px) {
+      html,
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        min-width: 0;
+        min-height: 100%;
+        height: auto;
+        flex-direction: column;
+      }
+
+      .controls {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .stage {
+        height: 70vh;
+        min-height: 520px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="controls" aria-label="Simulation controls">
+      <h1>Directional Solidification</h1>
+      <p class="subtitle">
+        A self-contained MVC clear-ice simulator. The model tracks a 1D thermal field, an advancing 0&nbsp;°C freezing front, Brownian solute motion, interface rejection, and trapped-particle cloudiness.
+      </p>
+
+      <section class="section">
+        <h2>Global Simulation</h2>
+        <div class="button-row">
+          <button id="playPauseBtn" type="button">Pause</button>
+          <button id="resetBtn" class="reset" type="button">Reset</button>
+        </div>
+
+        <div class="control-row">
+          <div class="label-line">
+            <span>Playback Rate</span>
+            <span id="speedValue" class="value">10x</span>
+          </div>
+          <input id="speedSlider" type="range" min="1" max="100" step="1" value="10" />
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Thermal Extremes</h2>
+        <div class="control-row">
+          <div class="label-line">
+            <span>Bottom Plate Temp</span>
+            <span id="bottomTempValue" class="value">-18 °C</span>
+          </div>
+          <input id="bottomTempSlider" type="range" min="-40" max="0" step="1" value="-18" />
+        </div>
+
+        <div class="control-row">
+          <div class="label-line">
+            <span>Ambient Air Temp</span>
+            <span id="ambientTempValue" class="value">12 °C</span>
+          </div>
+          <input id="ambientTempSlider" type="range" min="0" max="25" step="1" value="12" />
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Initial Solute Concentrations</h2>
+        <div class="control-row">
+          <div class="label-line">
+            <span>Dissolved Gases</span>
+            <span id="gasValue" class="value">240 particles</span>
+          </div>
+          <input id="gasSlider" type="range" min="0" max="900" step="10" value="240" />
+        </div>
+
+        <div class="control-row">
+          <div class="label-line">
+            <span>Dissolved Minerals</span>
+            <span id="mineralValue" class="value">140 particles</span>
+          </div>
+          <input id="mineralSlider" type="range" min="0" max="700" step="10" value="140" />
+        </div>
+        <p class="note">Changing concentration sliders soft-resets particle arrays while keeping the current temperature and playback settings.</p>
+      </section>
+
+      <section class="section">
+        <h2>Live Metrics</h2>
+        <div class="metrics">
+          <div class="metric">
+            <div class="name">Ice front</div>
+            <div id="frontMetric" class="number">0%</div>
+          </div>
+          <div class="metric">
+            <div class="name">Clarity</div>
+            <div id="clarityMetric" class="number">100%</div>
+          </div>
+          <div class="metric">
+            <div class="name">Trapped</div>
+            <div id="trappedMetric" class="number">0</div>
+          </div>
+          <div class="metric">
+            <div class="name">Liquid</div>
+            <div id="liquidMetric" class="number">0</div>
+          </div>
+          <div class="metric">
+            <div class="name">Target isotherm</div>
+            <div id="targetMetric" class="number">0%</div>
+          </div>
+          <div class="metric">
+            <div class="name">Sim time</div>
+            <div id="timeMetric" class="number">0s</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Legend</h2>
+        <div class="legend">
+          <div class="legend-item"><span class="swatch ice"></span>Solid ice, nearly transparent when clean</div>
+          <div class="legend-item"><span class="swatch gas"></span>Dissolved gases / bubbles, low partition coefficient</div>
+          <div class="legend-item"><span class="swatch mineral"></span>Mineral impurities, moderate partition coefficient</div>
+          <div class="legend-item"><span class="swatch cloud"></span>Cloudiness from trapped solute density</div>
+        </div>
+      </section>
+    </aside>
+
+    <main class="stage" aria-label="Simulation canvas area">
+      <canvas id="simCanvas"></canvas>
+      <div class="overlay">
+        <strong>Physics note:</strong> y=0 is the cooled bottom plate and y=H is the top water surface. Playback rate runs more fixed-size physics steps; freezing velocity still depends on the thermal variables.
+      </div>
+    </main>
+  </div>
+
+  <script>
+    "use strict";
+
+    /*****************************************************************************
+     * MODEL: Physics Engine
+     * Owns simulation state only. No DOM or Canvas calls are allowed here.
+     *****************************************************************************/
+    class PhysicsEngine {
+      constructor(options = {}) {
+        this.width = options.width || 420;
+        this.height = options.height || 620;
+
+        this.T_freeze = 0;
+        this.T_cool = options.T_cool ?? -18;
+        this.T_ambient = options.T_ambient ?? 12;
+
+        this.isPaused = false;
+        this.initialGasCount = options.initialGasCount ?? 240;
+        this.initialMineralCount = options.initialMineralCount ?? 140;
+
+        this.particles = [];
+        this.frontY = 0;
+        this.lastFrontSpeed = 0;
+        this.elapsed = 0;
+
+        this.rejectionBand = 30;
+        this.localRadius = 28;
+        this.solubilityThreshold = 0.0026;
+
+        this.randomNormalSpare = null;
+        this.reset();
+      }
+
+      reset() {
+        this.particles.length = 0;
+        this.frontY = 0;
+        this.lastFrontSpeed = 0;
+        this.elapsed = 0;
+        this.spawnParticles("gas", this.initialGasCount);
+        this.spawnParticles("mineral", this.initialMineralCount);
+      }
+
+      softResetParticles() {
+        this.particles.length = 0;
+        this.spawnParticles("gas", this.initialGasCount);
+        this.spawnParticles("mineral", this.initialMineralCount);
+      }
+
+      spawnParticles(type, count) {
+        const props = this.speciesProps(type);
+        const topPad = 14;
+        const bottomPad = 8;
+
+        for (let i = 0; i < count; i++) {
+          this.particles.push({
+            x: Math.random() * this.width,
+            y: bottomPad + Math.random() * (this.height - topPad - bottomPad),
+            type,
+            isTrapped: false,
+            lockedX: null,
+            lockedY: null,
+            radius: props.radius * (0.72 + Math.random() * 0.56),
+            jitterSeed: Math.random() * Math.PI * 2
+          });
+        }
+      }
+
+      speciesProps(type) {
+        if (type === "gas") {
+          return {
+            D_liquid: 62,
+            D_solid: 0,
+            k: 0.035,
+            radius: 2.4,
+            pushDistance: 7.5
+          };
+        }
+
+        return {
+          D_liquid: 21,
+          D_solid: 0,
+          k: 0.22,
+          radius: 2.15,
+          pushDistance: 5.2
+        };
+      }
+
+      temperatureAt(y) {
+        const normalizedY = this.clamp(y / this.height, 0, 1);
+        return this.T_cool + normalizedY * (this.T_ambient - this.T_cool);
+      }
+
+      targetFrontY() {
+        if (this.T_cool >= this.T_freeze) return 0;
+        if (this.T_ambient <= this.T_freeze) return this.height;
+
+        const denominator = this.T_ambient - this.T_cool;
+        if (Math.abs(denominator) < 1e-9) return 0;
+
+        const y = this.height * ((this.T_freeze - this.T_cool) / denominator);
+        return this.clamp(y, 0, this.height);
+      }
+
+      update(dt) {
+        if (this.isPaused || dt <= 0) return;
+
+        dt = Math.min(dt, 0.1);
+        this.elapsed += dt;
+
+        const previousFrontY = this.frontY;
+        this.advanceFreezingFront(dt);
+        this.lastFrontSpeed = (this.frontY - previousFrontY) / Math.max(dt, 1e-9);
+
+        for (const particle of this.particles) {
+          if (particle.isTrapped) continue;
+
+          if (particle.y <= this.frontY) {
+            this.handleInterfaceEncounter(particle);
+          } else {
+            this.diffuseLiquidParticle(particle, dt);
+
+            if (particle.y <= this.frontY) {
+              this.handleInterfaceEncounter(particle);
+            }
+          }
+        }
+      }
+
+      advanceFreezingFront(dt) {
+        const target = this.targetFrontY();
+        const delta = target - this.frontY;
+        if (Math.abs(delta) < 0.001) return;
+
+        const coolingStrength = this.clamp((this.T_freeze - this.T_cool) / 40, 0, 1);
+        const gradientStrength = this.clamp((this.T_ambient - this.T_cool) / 65, 0.08, 1.25);
+        const baseRate = this.height / 260;
+        const maxRate = baseRate * (0.35 + 1.8 * coolingStrength) * gradientStrength;
+
+        const step = Math.sign(delta) * Math.min(Math.abs(delta), maxRate * dt);
+        this.frontY = this.clamp(this.frontY + step, 0, this.height);
+      }
+
+      diffuseLiquidParticle(particle, dt) {
+        const props = this.speciesProps(particle.type);
+        const sigma = Math.sqrt(2 * props.D_liquid * dt);
+
+        particle.x += sigma * this.randomNormal();
+        particle.y += sigma * this.randomNormal();
+
+        const distanceAboveFront = particle.y - this.frontY;
+        if (distanceAboveFront > 0 && distanceAboveFront < this.rejectionBand && this.lastFrontSpeed > 0) {
+          const interfaceInfluence = 1 - distanceAboveFront / this.rejectionBand;
+          particle.y += this.lastFrontSpeed * dt * interfaceInfluence * 1.15;
+        }
+
+        this.reflectWithinDomain(particle);
+      }
+
+      handleInterfaceEncounter(particle) {
+        const props = this.speciesProps(particle.type);
+        const localConcentration = this.localParticleConcentration(particle.x, this.frontY);
+        const saturation = this.clamp(
+          (localConcentration - this.solubilityThreshold) / this.solubilityThreshold,
+          0,
+          1
+        );
+
+        const overtakenDepth = this.clamp((this.frontY - particle.y) / 12, 0, 1);
+        const gasBubbleBonus = particle.type === "gas" ? 0.16 * saturation : 0.04 * saturation;
+        const trapProbability = this.clamp(props.k + 0.68 * saturation + 0.18 * overtakenDepth + gasBubbleBonus, 0.02, 0.98);
+
+        if (Math.random() < trapProbability) {
+          particle.isTrapped = true;
+          particle.lockedX = this.clamp(particle.x, 0, this.width);
+          particle.lockedY = this.clamp(Math.min(particle.y, this.frontY - 0.25), 0, this.height);
+          particle.x = particle.lockedX;
+          particle.y = particle.lockedY;
+          return;
+        }
+
+        particle.y = this.clamp(
+          this.frontY + props.pushDistance + Math.random() * this.rejectionBand * 0.52,
+          0,
+          this.height
+        );
+        particle.x += this.randomNormal() * 2.4;
+        this.reflectWithinDomain(particle);
+      }
+
+      localParticleConcentration(x, frontY) {
+        const r = this.localRadius;
+        const yMin = frontY;
+        const yMax = Math.min(this.height, frontY + this.rejectionBand);
+        let count = 0;
+
+        for (const p of this.particles) {
+          if (p.isTrapped) continue;
+          if (p.y < yMin || p.y > yMax) continue;
+          if (Math.abs(p.x - x) <= r) count++;
+        }
+
+        const area = Math.max(1, (2 * r) * Math.max(1, yMax - yMin));
+        return count / area;
+      }
+
+      reflectWithinDomain(particle) {
+        if (particle.x < 0) particle.x = -particle.x;
+        if (particle.x > this.width) particle.x = this.width - (particle.x - this.width);
+        if (particle.x < 0) particle.x = 0;
+        if (particle.x > this.width) particle.x = this.width;
+
+        if (particle.y < this.frontY) particle.y = this.frontY + Math.random() * 2.5;
+        if (particle.y > this.height) particle.y = this.height - (particle.y - this.height);
+        if (particle.y < 0) particle.y = 0;
+        if (particle.y > this.height) particle.y = this.height;
+      }
+
+      metrics() {
+        let trapped = 0;
+        let gasTrapped = 0;
+        let mineralTrapped = 0;
+
+        for (const p of this.particles) {
+          if (p.isTrapped) {
+            trapped++;
+            if (p.type === "gas") gasTrapped++;
+            else mineralTrapped++;
+          }
+        }
+
+        const total = this.particles.length;
+        const frontFraction = this.frontY / this.height;
+        const targetFraction = this.targetFrontY() / this.height;
+        const solidAreaFraction = Math.max(0.02, frontFraction);
+        const weightedDensity = total === 0 ? 0 : (gasTrapped * 1.35 + mineralTrapped * 1.0) / (Math.max(1, total) * solidAreaFraction);
+        const clarity = this.clamp(1 / (1 + 1.75 * weightedDensity), 0, 1);
+
+        return {
+          trapped,
+          gasTrapped,
+          mineralTrapped,
+          liquid: total - trapped,
+          total,
+          frontFraction,
+          targetFraction,
+          clarity,
+          elapsed: this.elapsed
+        };
+      }
+
+      randomNormal() {
+        if (this.randomNormalSpare !== null) {
+          const spare = this.randomNormalSpare;
+          this.randomNormalSpare = null;
+          return spare;
+        }
+
+        let u = 0;
+        let v = 0;
+        while (u === 0) u = Math.random();
+        while (v === 0) v = Math.random();
+
+        const mag = Math.sqrt(-2 * Math.log(u));
+        const z0 = mag * Math.cos(2 * Math.PI * v);
+        const z1 = mag * Math.sin(2 * Math.PI * v);
+        this.randomNormalSpare = z1;
+        return z0;
+      }
+
+      clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+    }
+
+    /*****************************************************************************
+     * VIEW: Canvas Renderer
+     * Reads model state and draws it. Does not mutate simulation physics.
+     *****************************************************************************/
+    class CanvasView {
+      constructor(canvas, engine) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext("2d");
+        this.engine = engine;
+        this.dpr = Math.max(1, window.devicePixelRatio || 1);
+        this.bounds = { scale: 1, ox: 0, oy: 0, w: 0, h: 0 };
+        this.resize();
+      }
+
+      resize() {
+        const rect = this.canvas.getBoundingClientRect();
+        this.dpr = Math.max(1, window.devicePixelRatio || 1);
+        this.canvas.width = Math.floor(rect.width * this.dpr);
+        this.canvas.height = Math.floor(rect.height * this.dpr);
+        this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+
+        const pad = 58;
+        const usableW = Math.max(200, rect.width - pad * 2);
+        const usableH = Math.max(260, rect.height - pad * 2);
+        const scale = Math.min(usableW / this.engine.width, usableH / this.engine.height);
+        const simW = this.engine.width * scale;
+        const simH = this.engine.height * scale;
+
+        this.bounds = {
+          scale,
+          ox: (rect.width - simW) / 2,
+          oy: (rect.height - simH) / 2,
+          w: simW,
+          h: simH
+        };
+      }
+
+      draw() {
+        const ctx = this.ctx;
+        const cssW = this.canvas.width / this.dpr;
+        const cssH = this.canvas.height / this.dpr;
+        ctx.clearRect(0, 0, cssW, cssH);
+
+        this.drawBackground(ctx, cssW, cssH);
+        this.drawSimulationVessel(ctx);
+        this.drawThermalGradient(ctx);
+        this.drawLiquidWater(ctx);
+        this.drawIce(ctx);
+        this.drawCloudiness(ctx);
+        this.drawFrontLine(ctx);
+        this.drawParticles(ctx);
+        this.drawAnnotations(ctx);
+      }
+
+      sx(x) {
+        return this.bounds.ox + x * this.bounds.scale;
+      }
+
+      sy(y) {
+        return this.bounds.oy + (this.engine.height - y) * this.bounds.scale;
+      }
+
+      drawBackground(ctx, w, h) {
+        const gradient = ctx.createRadialGradient(w * 0.62, h * 0.12, 30, w * 0.62, h * 0.12, Math.max(w, h));
+        gradient.addColorStop(0, "rgba(30, 64, 105, 0.62)");
+        gradient.addColorStop(0.45, "rgba(8, 17, 31, 0.35)");
+        gradient.addColorStop(1, "rgba(2, 6, 23, 0.92)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      drawSimulationVessel(ctx) {
+        const b = this.bounds;
+        ctx.save();
+        ctx.translate(b.ox, b.oy);
+
+        ctx.shadowColor = "rgba(125, 211, 252, 0.20)";
+        ctx.shadowBlur = 24;
+        ctx.strokeStyle = "rgba(220, 245, 255, 0.40)";
+        ctx.lineWidth = 2;
+        this.roundRectPath(ctx, 0, 0, b.w, b.h, 18);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
+        ctx.lineWidth = 1;
+        for (let i = 1; i < 6; i++) {
+          const y = (b.h / 6) * i;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(b.w, y);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+        this.roundRectPath(ctx, -16, 0, 10, b.h, 6);
+        ctx.fill();
+        this.roundRectPath(ctx, b.w + 6, 0, 10, b.h, 6);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      drawThermalGradient(ctx) {
+        const b = this.bounds;
+        const x = b.ox + b.w + 30;
+        const y = b.oy;
+        const w = 14;
+        const h = b.h;
+        const grad = ctx.createLinearGradient(0, y + h, 0, y);
+        grad.addColorStop(0, "rgba(59, 130, 246, 0.95)");
+        grad.addColorStop(0.5, "rgba(224, 242, 254, 0.72)");
+        grad.addColorStop(1, "rgba(251, 191, 36, 0.90)");
+
+        ctx.save();
+        this.roundRectPath(ctx, x, y, w, h, 999);
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+        ctx.stroke();
+
+        const zeroY = this.sy(this.engine.targetFrontY());
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.86)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x - 4, zeroY);
+        ctx.lineTo(x + w + 4, zeroY);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(234, 245, 255, 0.86)";
+        ctx.font = "12px ui-sans-serif, system-ui";
+        ctx.textAlign = "left";
+        ctx.fillText(`${this.engine.T_ambient.toFixed(0)} °C`, x + 22, y + 10);
+        ctx.fillText("0 °C", x + 22, zeroY + 4);
+        ctx.fillText(`${this.engine.T_cool.toFixed(0)} °C`, x + 22, y + h);
+        ctx.restore();
+      }
+
+      drawLiquidWater(ctx) {
+        const b = this.bounds;
+        const frontScreenY = this.sy(this.engine.frontY);
+        const topY = b.oy;
+        const liquidH = Math.max(0, frontScreenY - topY);
+        if (liquidH <= 0) return;
+
+        const gradient = ctx.createLinearGradient(0, topY, 0, frontScreenY);
+        gradient.addColorStop(0, "rgba(14, 165, 233, 0.24)");
+        gradient.addColorStop(0.52, "rgba(56, 189, 248, 0.17)");
+        gradient.addColorStop(1, "rgba(12, 74, 110, 0.30)");
+
+        ctx.save();
+        this.clipVessel(ctx);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(b.ox, topY, b.w, liquidH);
+
+        ctx.globalAlpha = 0.14;
+        ctx.strokeStyle = "rgba(200, 245, 255, 0.45)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 9; i++) {
+          const y = topY + 18 + i * 43 + Math.sin(performance.now() / 1100 + i) * 3;
+          ctx.beginPath();
+          for (let x = b.ox; x <= b.ox + b.w; x += 12) {
+            const wave = Math.sin(x / 28 + i * 0.75 + performance.now() / 1500) * 2.2;
+            if (x === b.ox) ctx.moveTo(x, y + wave);
+            else ctx.lineTo(x, y + wave);
+          }
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      drawIce(ctx) {
+        const b = this.bounds;
+        const frontScreenY = this.sy(this.engine.frontY);
+        const bottomY = b.oy + b.h;
+        const iceH = Math.max(0, bottomY - frontScreenY);
+        if (iceH <= 0) return;
+
+        const metrics = this.engine.metrics();
+        const cleanAlpha = 0.08 + (1 - metrics.clarity) * 0.16;
+        const gradient = ctx.createLinearGradient(0, frontScreenY, 0, bottomY);
+        gradient.addColorStop(0, `rgba(225, 247, 255, ${cleanAlpha})`);
+        gradient.addColorStop(0.5, `rgba(186, 230, 253, ${cleanAlpha + 0.03})`);
+        gradient.addColorStop(1, `rgba(240, 249, 255, ${cleanAlpha + 0.06})`);
+
+        ctx.save();
+        this.clipVessel(ctx);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(b.ox, frontScreenY, b.w, iceH);
+
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.13)";
+        ctx.lineWidth = 1;
+        const spacing = 34 * b.scale;
+        for (let x = b.ox - b.h; x < b.ox + b.w + b.h; x += spacing) {
+          ctx.beginPath();
+          ctx.moveTo(x, bottomY);
+          ctx.lineTo(x + b.h * 0.42, frontScreenY);
+          ctx.stroke();
+        }
+        for (let x = b.ox; x < b.ox + b.w + b.h; x += spacing * 1.25) {
+          ctx.beginPath();
+          ctx.moveTo(x, frontScreenY);
+          ctx.lineTo(x - b.h * 0.36, bottomY);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      drawCloudiness(ctx) {
+        const b = this.bounds;
+        if (this.engine.frontY <= 0) return;
+
+        const cell = 22;
+        const cols = Math.ceil(this.engine.width / cell);
+        const rows = Math.ceil(this.engine.height / cell);
+        const counts = new Array(cols * rows).fill(0);
+
+        for (const p of this.engine.particles) {
+          if (!p.isTrapped) continue;
+          const cx = Math.min(cols - 1, Math.max(0, Math.floor(p.x / cell)));
+          const cy = Math.min(rows - 1, Math.max(0, Math.floor(p.y / cell)));
+          counts[cy * cols + cx] += p.type === "gas" ? 1.4 : 1.0;
+        }
+
+        ctx.save();
+        this.clipVessel(ctx);
+        for (let cy = 0; cy < rows; cy++) {
+          for (let cx = 0; cx < cols; cx++) {
+            const count = counts[cy * cols + cx];
+            if (count <= 0) continue;
+
+            const x = cx * cell + cell / 2;
+            const y = cy * cell + cell / 2;
+            if (y > this.engine.frontY + cell) continue;
+
+            const screenX = this.sx(x);
+            const screenY = this.sy(y);
+            const r = Math.max(5, this.bounds.scale * cell * (0.45 + 0.08 * Math.min(4, count)));
+            const alpha = Math.min(0.60, 0.08 + count * 0.055);
+            const cloud = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, r * 1.9);
+            cloud.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+            cloud.addColorStop(0.55, `rgba(226, 244, 255, ${alpha * 0.42})`);
+            cloud.addColorStop(1, "rgba(255, 255, 255, 0)");
+            ctx.fillStyle = cloud;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, r * 1.9, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.restore();
+      }
+
+      drawFrontLine(ctx) {
+        const b = this.bounds;
+        const y = this.sy(this.engine.frontY);
+
+        ctx.save();
+        this.clipVessel(ctx);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.92)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let x = b.ox; x <= b.ox + b.w; x += 10) {
+          const ripple = Math.sin((x + performance.now() / 40) / 19) * 0.8;
+          if (x === b.ox) ctx.moveTo(x, y + ripple);
+          else ctx.lineTo(x, y + ripple);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(125, 211, 252, 0.35)";
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(b.ox, y);
+        ctx.lineTo(b.ox + b.w, y);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      drawParticles(ctx) {
+        const b = this.bounds;
+        ctx.save();
+        this.clipVessel(ctx);
+
+        for (const p of this.engine.particles) {
+          const x = this.sx(p.x);
+          const y = this.sy(p.y);
+          const radius = Math.max(1.3, p.radius * b.scale);
+
+          if (p.type === "gas") {
+            ctx.beginPath();
+            ctx.arc(x, y, p.isTrapped ? radius * 1.55 : radius, 0, Math.PI * 2);
+            ctx.fillStyle = p.isTrapped ? "rgba(248, 250, 252, 0.92)" : "rgba(241, 245, 249, 0.74)";
+            ctx.fill();
+            ctx.strokeStyle = p.isTrapped ? "rgba(148, 163, 184, 0.78)" : "rgba(255, 255, 255, 0.38)";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          } else {
+            const size = Math.max(2.3, radius * 1.65);
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(p.jitterSeed);
+            ctx.fillStyle = p.isTrapped ? "rgba(245, 158, 11, 0.95)" : "rgba(251, 191, 36, 0.82)";
+            ctx.strokeStyle = "rgba(120, 53, 15, 0.55)";
+            ctx.lineWidth = 1;
+            ctx.fillRect(-size / 2, -size / 2, size, size);
+            ctx.strokeRect(-size / 2, -size / 2, size, size);
+            ctx.restore();
+          }
+        }
+
+        ctx.restore();
+      }
+
+      drawAnnotations(ctx) {
+        const b = this.bounds;
+        const frontY = this.sy(this.engine.frontY);
+        const targetY = this.sy(this.engine.targetFrontY());
+
+        ctx.save();
+        ctx.font = "12px ui-sans-serif, system-ui";
+        ctx.textAlign = "right";
+        ctx.fillStyle = "rgba(234, 245, 255, 0.86)";
+        ctx.fillText("ambient / water surface", b.ox + b.w, b.oy - 12);
+        ctx.fillText("cooling plate", b.ox + b.w, b.oy + b.h + 24);
+
+        ctx.textAlign = "left";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+        ctx.fillText("freezing front", b.ox + 10, frontY - 8);
+
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = "rgba(250, 204, 21, 0.45)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(b.ox, targetY);
+        ctx.lineTo(b.ox + b.w, targetY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "rgba(253, 230, 138, 0.86)";
+        ctx.fillText("0 °C isotherm target", b.ox + 10, targetY + 16);
+        ctx.restore();
+      }
+
+      clipVessel(ctx) {
+        const b = this.bounds;
+        this.roundRectPath(ctx, b.ox, b.oy, b.w, b.h, 18);
+        ctx.clip();
+      }
+
+      roundRectPath(ctx, x, y, w, h, r) {
+        const radius = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + w - radius, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+        ctx.lineTo(x + w, y + h - radius);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+        ctx.lineTo(x + radius, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+      }
+    }
+
+    /*****************************************************************************
+     * CONTROLLER: DOM bindings and animation loop
+     * Owns user interactions and coordinates Model -> View updates.
+     *****************************************************************************/
+    const engine = new PhysicsEngine({
+      width: 420,
+      height: 620,
+      T_cool: -18,
+      T_ambient: 12,
+      initialGasCount: 240,
+      initialMineralCount: 140
+    });
+
+    const canvas = document.getElementById("simCanvas");
+    const view = new CanvasView(canvas, engine);
+
+    const controls = {
+      playPauseBtn: document.getElementById("playPauseBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      speedSlider: document.getElementById("speedSlider"),
+      bottomTempSlider: document.getElementById("bottomTempSlider"),
+      ambientTempSlider: document.getElementById("ambientTempSlider"),
+      gasSlider: document.getElementById("gasSlider"),
+      mineralSlider: document.getElementById("mineralSlider"),
+      speedValue: document.getElementById("speedValue"),
+      bottomTempValue: document.getElementById("bottomTempValue"),
+      ambientTempValue: document.getElementById("ambientTempValue"),
+      gasValue: document.getElementById("gasValue"),
+      mineralValue: document.getElementById("mineralValue"),
+      frontMetric: document.getElementById("frontMetric"),
+      clarityMetric: document.getElementById("clarityMetric"),
+      trappedMetric: document.getElementById("trappedMetric"),
+      liquidMetric: document.getElementById("liquidMetric"),
+      targetMetric: document.getElementById("targetMetric"),
+      timeMetric: document.getElementById("timeMetric")
+    };
+
+    let playbackRate = Number(controls.speedSlider.value);
+    let lastTimestamp = performance.now();
+    let concentrationResetTimer = null;
+
+    // Fixed-step integration keeps the physical model independent of playback rate.
+    // The slider changes how many fixed physical seconds are simulated per wall-clock
+    // second, not the integration timestep itself.
+    const FIXED_PHYSICS_DT = 1 / 60;
+    const MAX_PHYSICS_STEPS_PER_FRAME = 240;
+    let simulationAccumulator = 0;
+
+    function updateControlLabels() {
+      controls.speedValue.textContent = `${playbackRate.toFixed(0)}x`;
+      controls.bottomTempValue.textContent = `${engine.T_cool.toFixed(0)} °C`;
+      controls.ambientTempValue.textContent = `${engine.T_ambient.toFixed(0)} °C`;
+      controls.gasValue.textContent = `${engine.initialGasCount.toFixed(0)} particles`;
+      controls.mineralValue.textContent = `${engine.initialMineralCount.toFixed(0)} particles`;
+      controls.playPauseBtn.textContent = engine.isPaused ? "Play" : "Pause";
+    }
+
+    function updateMetrics() {
+      const m = engine.metrics();
+      controls.frontMetric.textContent = `${Math.round(m.frontFraction * 100)}%`;
+      controls.targetMetric.textContent = `${Math.round(m.targetFraction * 100)}%`;
+      controls.clarityMetric.textContent = `${Math.round(m.clarity * 100)}%`;
+      controls.trappedMetric.textContent = String(m.trapped);
+      controls.liquidMetric.textContent = String(m.liquid);
+      controls.timeMetric.textContent = `${Math.round(m.elapsed)}s`;
+    }
+
+    function scheduleSoftParticleReset() {
+      window.clearTimeout(concentrationResetTimer);
+      concentrationResetTimer = window.setTimeout(() => {
+        engine.softResetParticles();
+        updateMetrics();
+      }, 120);
+    }
+
+    controls.playPauseBtn.addEventListener("click", () => {
+      engine.isPaused = !engine.isPaused;
+      updateControlLabels();
+    });
+
+    controls.resetBtn.addEventListener("click", () => {
+      engine.reset();
+      simulationAccumulator = 0;
+      updateMetrics();
+    });
+
+    controls.speedSlider.addEventListener("input", (event) => {
+      playbackRate = Number(event.target.value);
+      updateControlLabels();
+    });
+
+    controls.bottomTempSlider.addEventListener("input", (event) => {
+      engine.T_cool = Number(event.target.value);
+      updateControlLabels();
+      updateMetrics();
+    });
+
+    controls.ambientTempSlider.addEventListener("input", (event) => {
+      engine.T_ambient = Number(event.target.value);
+      updateControlLabels();
+      updateMetrics();
+    });
+
+    controls.gasSlider.addEventListener("input", (event) => {
+      engine.initialGasCount = Number(event.target.value);
+      updateControlLabels();
+      scheduleSoftParticleReset();
+    });
+
+    controls.mineralSlider.addEventListener("input", (event) => {
+      engine.initialMineralCount = Number(event.target.value);
+      updateControlLabels();
+      scheduleSoftParticleReset();
+    });
+
+    window.addEventListener("resize", () => {
+      view.resize();
+    });
+
+    function animationLoop(timestamp) {
+      const rawDt = Math.min((timestamp - lastTimestamp) / 1000, 0.25);
+      lastTimestamp = timestamp;
+
+      if (!engine.isPaused) {
+        simulationAccumulator += rawDt * playbackRate;
+
+        let stepsThisFrame = 0;
+        while (simulationAccumulator >= FIXED_PHYSICS_DT && stepsThisFrame < MAX_PHYSICS_STEPS_PER_FRAME) {
+          engine.update(FIXED_PHYSICS_DT);
+          simulationAccumulator -= FIXED_PHYSICS_DT;
+          stepsThisFrame++;
+        }
+
+        // If the tab stalls or the browser cannot keep up, drop excess backlog rather
+        // than increasing dt. This preserves fixed-step physics and only slows playback.
+        if (stepsThisFrame >= MAX_PHYSICS_STEPS_PER_FRAME) {
+          simulationAccumulator = 0;
+        }
+      } else {
+        simulationAccumulator = 0;
+      }
+
+      view.draw();
+      updateMetrics();
+
+      window.requestAnimationFrame(animationLoop);
+    }
+
+    updateControlLabels();
+    updateMetrics();
+    window.requestAnimationFrame(animationLoop);
+  </script>
+</body>
+</html>
