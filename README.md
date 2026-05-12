@@ -558,7 +558,7 @@ The advanced model is more physical than the lite model, but it is still a compa
 
 This project is licensed under the MIT License.
 
-Copyright (c) 2026 [Your Name or Organization]
+Copyright (c) 2026 Hironori Kondo
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
