@@ -39,12 +39,12 @@
       width: 100%;
       height: 100%;
       display: flex;
-      min-width: 980px;
+      min-width: 900px;
     }
 
     .controls {
-      width: 380px;
-      min-width: 350px;
+      width: 340px;
+      min-width: 320px;
       height: 100%;
       padding: 22px;
       overflow-y: auto;
@@ -211,6 +211,9 @@
       flex: 1;
       min-width: 0;
       height: 100%;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
     }
 
     canvas {
@@ -219,23 +222,6 @@
       height: 100%;
     }
 
-    .overlay {
-      position: absolute;
-      left: 18px;
-      bottom: 18px;
-      max-width: 450px;
-      padding: 12px 14px;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      color: var(--muted);
-      background: rgba(2, 6, 23, 0.58);
-      backdrop-filter: blur(10px);
-      font-size: 12px;
-      line-height: 1.45;
-      pointer-events: none;
-    }
-
-    .overlay strong { color: #e0f2fe; }
 
     @media (max-width: 980px) {
       html,
@@ -253,10 +239,9 @@
         border-bottom: 1px solid var(--line);
       }
       .stage {
-        height: 76vh;
-        min-height: 560px;
+        height: 70vh;
+        min-height: 520px;
       }
-      .overlay { display: none; }
     }
   </style>
 </head>
@@ -403,9 +388,6 @@
 
     <main class="stage" aria-label="Simulation canvas area">
       <canvas id="simCanvas"></canvas>
-      <div class="overlay">
-        <strong>Model:</strong> Gas and mineral fields diffuse independently, reject solute according to their own partition coefficients, and jointly depress the local freezing point. Particle motion is biased toward the concentration boundary layer so the visual particles track the grid spike near the interface.
-      </div>
     </main>
   </div>
 
@@ -977,22 +959,57 @@
 
         const cssW = rect.width;
         const cssH = rect.height;
-        const margin = 48;
-        const graphW = Math.min(310, Math.max(245, cssW * 0.28));
-        const vesselW = Math.max(270, cssW - graphW - margin * 3);
-        const vesselH = Math.max(420, cssH - margin * 2);
+        const margin = 58;
+        const usableW = Math.max(260, cssW - margin * 2);
+        const usableH = Math.max(360, cssH - margin * 2);
+
+        // Treat the vessel and field-profile plot as one centered visual group.
+        // Both panels share the same y-position and height so vertical positions
+        // in the graph line up with vertical positions in the water column.
+        const liteAspectRatio = 420 / 620;
+        const gap = 30;
+        const minVesselW = 280;
+        const minGraphW = 260;
+        const preferredGraphW = Math.min(360, Math.max(300, usableW * 0.28));
+        let graphW = Math.min(preferredGraphW, Math.max(minGraphW, usableW * 0.36));
+        let vesselH = usableH;
+        let vesselW = vesselH * liteAspectRatio;
+
+        if (vesselW + gap + graphW > usableW) {
+          graphW = Math.min(graphW, Math.max(minGraphW, usableW * 0.34));
+          vesselW = Math.max(minVesselW, usableW - gap - graphW);
+          vesselH = vesselW / liteAspectRatio;
+        }
+
+        if (vesselH > usableH) {
+          vesselH = usableH;
+          vesselW = vesselH * liteAspectRatio;
+        }
+
+        const sharedH = Math.min(usableH, vesselH);
+        vesselW = sharedH * liteAspectRatio;
+        if (vesselW + gap + graphW > usableW) {
+          const scale = usableW / (vesselW + gap + graphW);
+          vesselW *= scale;
+          graphW *= scale;
+        }
+
+        const groupW = vesselW + gap + graphW;
+        const groupX = (cssW - groupW) / 2;
+        const sharedY = (cssH - sharedH) / 2;
 
         this.vessel = {
-          x: margin,
-          y: margin,
-          w: Math.min(520, vesselW),
-          h: vesselH
+          x: groupX,
+          y: sharedY,
+          w: vesselW,
+          h: sharedH
         };
+
         this.graph = {
-          x: this.vessel.x + this.vessel.w + margin,
-          y: margin + 24,
+          x: groupX + vesselW + gap,
+          y: sharedY,
           w: graphW,
-          h: vesselH - 48
+          h: sharedH
         };
       }
 
@@ -1313,7 +1330,9 @@
         const e = this.engine;
         const n = e.nodeCount;
         const pad = 14;
-        const plot = { x: g.x + pad, y: g.y + 42, w: g.w - pad * 2, h: g.h - 78 };
+        // The plot area spans the full graph height so every vertical graph
+        // position corresponds directly to the same y-position in the vessel.
+        const plot = { x: g.x + pad, y: g.y, w: g.w - pad * 2, h: g.h };
 
         ctx.save();
         this.roundRectPath(ctx, g.x, g.y, g.w, g.h, 18);
@@ -1324,7 +1343,11 @@
 
         ctx.fillStyle = "rgba(237, 247, 255, 0.92)";
         ctx.font = "700 13px ui-sans-serif, system-ui";
-        ctx.fillText("1D field profiles", g.x + pad, g.y + 24);
+        ctx.fillStyle = "rgba(2, 6, 23, 0.62)";
+        this.roundRectPath(ctx, g.x + 8, g.y + 8, 138, 26, 10);
+        ctx.fill();
+        ctx.fillStyle = "rgba(237, 247, 255, 0.92)";
+        ctx.fillText("1D field profiles", g.x + pad, g.y + 26);
 
         ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
         ctx.lineWidth = 1;
@@ -1377,15 +1400,20 @@
         ctx.setLineDash([]);
 
         ctx.font = "11px ui-sans-serif, system-ui";
-        this.legendText(ctx, plot.x, g.y + g.h - 22, "T", "rgba(56, 189, 248, 0.96)");
-        this.legendText(ctx, plot.x + 48, g.y + g.h - 22, "C total", "rgba(245, 158, 11, 0.96)");
-        this.legendText(ctx, plot.x + 126, g.y + g.h - 22, "T_f", "rgba(255, 255, 255, 0.92)");
-        this.legendText(ctx, plot.x + 178, g.y + g.h - 22, "gas/min", "rgba(229, 231, 235, 0.70)");
+        const legendY = g.y + g.h - 20;
+        ctx.fillStyle = "rgba(2, 6, 23, 0.62)";
+        this.roundRectPath(ctx, g.x + 8, g.y + g.h - 42, Math.min(g.w - 16, 268), 28, 10);
+        ctx.fill();
+        this.legendText(ctx, plot.x, legendY, "T", "rgba(56, 189, 248, 0.96)");
+        this.legendText(ctx, plot.x + 48, legendY, "C total", "rgba(245, 158, 11, 0.96)");
+        this.legendText(ctx, plot.x + 126, legendY, "T_f", "rgba(255, 255, 255, 0.92)");
+        this.legendText(ctx, plot.x + 178, legendY, "gas/min", "rgba(229, 231, 235, 0.70)");
 
         ctx.fillStyle = "rgba(169, 189, 208, 0.92)";
-        ctx.fillText(`${Tmin.toFixed(0)} °C`, plot.x, plot.y + plot.h + 15);
+        ctx.font = "10px ui-sans-serif, system-ui";
+        ctx.fillText(`${Tmax.toFixed(0)} °C`, plot.x, g.y + 48);
         ctx.textAlign = "right";
-        ctx.fillText(`${Tmax.toFixed(0)} °C / ${(Cmax * 100).toFixed(1)}% C`, plot.x + plot.w, plot.y + plot.h + 15);
+        ctx.fillText(`${Tmin.toFixed(0)} °C / ${(Cmax * 100).toFixed(1)}% C max`, plot.x + plot.w, g.y + g.h - 48);
         ctx.textAlign = "left";
         ctx.restore();
       }
