@@ -654,7 +654,7 @@
       evaluateConstitutionalUndercooling() {
         const n = this.nodeCount;
         const start = this.interfaceIndex + 1;
-        const end = Math.min(n - 1, start + 26);
+        const end = n - 1;
         let maxUndercooling = 0;
         const boundaryC = start < n ? this.totalCAt(start) : 0;
         const enrichment = boundaryC / Math.max(this.bulkTotalC, 1e-6);
@@ -805,6 +805,7 @@
 
         for (const p of this.particles) {
           if (p.trapped) continue;
+          p.phase += dt * (Math.random() - 0.5) * 4.0;
           const params = this.speciesParams(p.type);
           const sigma = Math.sqrt(2 * params.particleD * dt);
           const field = p.type === "gas" ? this.C_gas : this.C_mineral;
@@ -812,7 +813,6 @@
           p.x += sigma * this.randomNormal();
           p.y += sigma * this.randomNormal();
           this.applyConcentrationGradientDrift(p, field, dt);
-          this.pullParticleTowardBoundaryLayer(p, field, dt);
 
           const distanceAhead = p.y - front;
           if (distanceAhead <= sterileLayer) {
@@ -826,15 +826,11 @@
             p.y = front + sterileLayer + Math.random() * 0.004;
           } else if (distanceAhead < rejectionBand) {
             if (this.isUnstable) {
-              p.y -= 0.0018 * dt * (1 - distanceAhead / rejectionBand);
               if (distanceAhead < roughCaptureBand && Math.random() < 0.045 + 0.10 * this.instabilityScore) {
                 this.trapParticle(p, front);
                 continue;
               }
             } else {
-              // Planar rejection is gentle: particles are kept in the boundary layer,
-              // not artificially evacuated far from the interface.
-              p.y += params.particleDrift * dt * 0.08 * (1 - distanceAhead / rejectionBand);
             }
           }
 
@@ -847,34 +843,8 @@
         const below = field[Math.max(this.interfaceIndex + 1, idx - 1)];
         const above = field[Math.min(this.nodeCount - 1, idx + 1)];
         const scale = Math.max(this.gasC0 + this.mineralC0, this.bulkTotalC, 1e-6);
-        const normalizedGradient = this.clamp((above - below) / scale, -2, 2);
+        const normalizedGradient = this.clamp((below - above) / scale, -2, 2);
         p.y += normalizedGradient * dt * 0.010;
-      }
-
-      pullParticleTowardBoundaryLayer(p, field, dt) {
-        const start = this.interfaceIndex + 1;
-        if (start >= this.nodeCount - 1) return;
-
-        const maxLookahead = Math.min(this.nodeCount - 1, start + 24);
-        let peakIndex = start;
-        let peakC = field[start];
-        for (let i = start + 1; i <= maxLookahead; i++) {
-          if (field[i] > peakC) {
-            peakC = field[i];
-            peakIndex = i;
-          }
-        }
-
-        const idx = this.clamp(Math.round(p.y / this.dy), start, this.nodeCount - 1);
-        const localC = field[idx];
-        const bulkScale = Math.max(this.bulkTotalC, this.gasC0 + this.mineralC0, 1e-6);
-        const enrichment = peakC / bulkScale;
-        if (enrichment < 1.08) return;
-
-        const targetY = peakIndex * this.dy + (Math.random() - 0.5) * this.dy * 0.75;
-        const need = this.clamp((peakC - localC) / bulkScale, 0, 2.5);
-        const strength = this.clamp(0.012 * enrichment * need, 0, 0.060);
-        p.y += (targetY - p.y) * strength * dt;
       }
 
       trapParticle(p, front) {
@@ -1110,16 +1080,26 @@
         const e = this.engine;
         const n = e.nodeCount;
         const liquidH = Math.max(0, frontScreen - v.y);
-        if (liquidH <= 0) return;
+        const start = e.interfaceIndex + 1;
+        if (liquidH <= 0 || start >= n) return;
 
-        const maxC = Math.max((e.gasC0 + e.mineralC0) * 3, this.maxTotalC(), 0.001);
+        // Match the particle/tracer logic: visualize *enrichment above bulk*,
+        // not absolute total concentration. This makes the orange tint follow
+        // the same near-interface boundary layer that the dots emphasize.
+        const lookahead = Math.min(n - 1, start + 30);
+        const bulkGas = this.averageGridRange(e.C_gas, lookahead + 1, n) || e.gasC0 || 0.0005;
+        const bulkMineral = this.averageGridRange(e.C_mineral, lookahead + 1, n) || e.mineralC0 || 0.0005;
         const tint = ctx.createLinearGradient(0, v.y, 0, frontScreen);
 
-        for (let i = n - 1; i >= e.interfaceIndex + 1; i--) {
+        for (let i = n - 1; i >= start; i--) {
           const screenY = this.sy(i / (n - 1));
           const stop = this.clamp((screenY - v.y) / liquidH, 0, 1);
-          const totalC = e.totalCAt(i);
-          const alpha = this.clamp((totalC / maxC) * 0.18, 0, 0.18);
+
+          const gasExcess = Math.max(0, e.C_gas[i] / Math.max(bulkGas, 0.0005) - 1);
+          const mineralExcess = Math.max(0, e.C_mineral[i] / Math.max(bulkMineral, 0.0005) - 1);
+          const enrichment = gasExcess + mineralExcess;
+          const alpha = this.clamp(enrichment / 2.5 * 0.30, 0, 0.30);
+
           tint.addColorStop(stop, `rgba(245, 158, 11, ${alpha})`);
         }
 
@@ -1379,10 +1359,8 @@
         for (let d = 0; d < dotCount; d++) {
           const baseX = this.hash01(cellIndex * 97 + d * 131 + offset);
           const baseY = this.hash01(cellIndex * 193 + d * 71 + offset * 3);
-          const driftX = Math.sin(timePhase * 1.7 + cellIndex * 0.31 + d * 1.9) * 0.018;
-          const driftY = Math.cos(timePhase * 1.3 + cellIndex * 0.27 + d * 2.4) * 0.18;
-          const rx = (baseX + driftX + 1) % 1;
-          const ry = this.clamp(baseY + driftY, 0.05, 0.95);
+          const rx = (baseX + 1) % 1;
+          const ry = this.clamp(baseY, 0.05, 0.95);
           const px = x + rx * w;
           const py = y + ry * h;
 
@@ -1515,7 +1493,8 @@
 
         const allTf = [];
         for (let i = 0; i < n; i++) allTf.push(e.freezingPointAtIndex(i));
-        const Tmin = Math.min(-32, e.T_cool, ...Array.from(e.T_grid), ...allTf) - 1;
+        const actualTmin = Math.min(e.T_cool, ...Array.from(e.T_grid));
+        const Tmin = Math.min(-32, actualTmin) - 1;
         const Tmax = Math.max(26, e.T_ambient, ...Array.from(e.T_grid), 1) + 1;
         const Cmax = Math.max((e.gasC0 + e.mineralC0) * 3, this.maxTotalC(), 0.001);
 
@@ -1533,7 +1512,18 @@
 
         this.drawGraphLine(ctx, n, yForIndex, (i) => xForTemp(e.T_grid[i]), "rgba(56, 189, 248, 0.96)", 2.3);
         this.drawGraphLine(ctx, n, yForIndex, (i) => xForC(e.totalCAt(i)), "rgba(245, 158, 11, 0.96)", 2.1);
-        this.drawGraphLine(ctx, n, yForIndex, (i) => xForTemp(e.freezingPointAtIndex(i)), "rgba(255, 255, 255, 0.92)", 1.9);
+        ctx.save();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.92)";
+        ctx.lineWidth = 1.9;
+        ctx.beginPath();
+        for (let i = e.interfaceIndex; i < n; i++) {
+          const x = xForTemp(e.freezingPointAtIndex(i));
+          const y = yForIndex(i);
+          if (i === e.interfaceIndex) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.restore();
         this.drawGraphLine(ctx, n, yForIndex, (i) => xForC(e.C_gas[i]), "rgba(229, 231, 235, 0.62)", 1.2);
         this.drawGraphLine(ctx, n, yForIndex, (i) => xForC(e.C_mineral[i]), "rgba(251, 191, 36, 0.58)", 1.2);
 
