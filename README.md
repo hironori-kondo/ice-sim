@@ -134,7 +134,9 @@ The advanced model includes:
   - gas and mineral component curves,
   - solute-depressed freezing point `T_f(y)`,
   - the interface location.
-- Animated particle and tracer overlays that follow the solute boundary layer.
+- Animated, Brownian-driven particles in the melt that physically react to the advancing interface.
+- An overlay that visualizes the zone of constitutional undercooling ahead of the interface.
+- A density-mapped overlay that visualizes the concentration spike of the solute boundary layer.
 - Faint solid-inclusion markers for incorporated solid solute.
 - Brighter trapped inclusions and cloudiness during unstable growth.
 
