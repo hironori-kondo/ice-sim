@@ -17,27 +17,27 @@ Both widgets are single-file HTML applications. Each file contains its own HTML,
 
 ### Advanced model: default interface and field graph
 
-![Advanced model default state](screenshots/ice-sim-default.png)
+![Advanced model default state](screenshots/ice-sim-default-2.png)
 
 ### Advanced model: clear ice, stable growth
 
-![Advanced model stable growth](screenshots/ice-sim-clear.png)
+![Advanced model stable growth](screenshots/ice-sim-clear-2.png)
 
 ### Advanced model: constitutional undercooling/strong initial transient
 
-![Advanced model constitutional undercooling](screenshots/ice-sim-undercooling.png)
+![Advanced model constitutional undercooling](screenshots/ice-sim-undercooling-2.png)
 
 ### Lite model: default simulation
 
-![Lite model default state](screenshots/ice-sim-lite-default-2.png)
+![Lite model default state](screenshots/ice-sim-lite-default-3.png)
 
 ### Lite model: clear ice
 
-![Lite model clear ice](screenshots/ice-sim-lite-clear-2.png)
+![Lite model clear ice](screenshots/ice-sim-lite-clear-3.png)
 
 ### Lite model: cloudy ice
 
-![Lite model cloudy ice](screenshots/ice-sim-lite-cloudy-2.png)
+![Lite model cloudy ice](screenshots/ice-sim-lite-cloudy-3.png)
 ---
 
 ## Project Overview
